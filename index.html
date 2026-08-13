@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    <div class="version">v2026.08.13.6</div>
+    <div class="version">v2026.08.13.7</div>
 
     <script>
         const supabaseUrl = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
@@ -69,71 +69,103 @@
                 const arrayBuffer = await file.arrayBuffer();
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 const ws = workbook.Sheets[workbook.SheetNames[0]];
-                const datos = XLSX.utils.sheet_to_json(ws);
+                const datos = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-                console.log('Datos leídos:', datos);
+                console.log('Total filas:', datos.length);
 
                 const polizas = [];
+                const skipRows = [];
                 
                 datos.forEach((row, idx) => {
-                    // Validar que tenga fecha y total
-                    const fecha = row['▼ Fecha Comprobante'];
-                    const total = parseFloat(row['Total']);
-                    const emisor = row['Nombre Emisor'];
-                    const folio = row['Folio'];
-
-                    if (!fecha || !total || !emisor) {
-                        console.log(`Fila ${idx + 2} saltada (datos incompletos)`);
+                    // SALTAR FILAS VACÍAS
+                    if (!row['▼ Fecha Comprobante'] || !row['Total']) {
+                        skipRows.push(idx + 2);
                         return;
                     }
 
-                    // Convertir fecha Excel a string
+                    const fecha = row['▼ Fecha Comprobante'];
+                    const total = parseFloat(row['Total']) || 0;
+                    const emisor = row['Nombre Emisor'] || 'Sin emisor';
+                    const folio = row['Folio'] || 'Sin folio';
+                    const tipoCFDI = row['Tipo Comprobante Desc'] || 'Egreso'; // Egreso o Ingreso
+
+                    // Convertir fecha
                     let fechaStr = fecha;
                     if (typeof fecha === 'number') {
                         const d = new Date((fecha - 25569) * 86400 * 1000);
                         fechaStr = d.toISOString().split('T')[0];
                     } else if (typeof fecha === 'string') {
-                        fechaStr = fecha.split('T')[0];
+                        const parts = fecha.split('/');
+                        if (parts.length === 3) {
+                            fechaStr = `2026-${parts[1]}-${parts[0]}`;
+                        }
                     }
 
                     // Calcular subtotal e IVA
                     const subtotal = total / 1.16;
                     const iva = total - subtotal;
 
-                    const poliza = {
-                        fecha: fechaStr,
-                        tipo_poliza: 'Egreso',
-                        concepto: `COMPRA - ${folio} - ${emisor}`,
-                        detalles: [
-                            { cuenta: '501-01-000', debe: subtotal, haber: 0 },
-                            { cuenta: '201-01-000', debe: 0, haber: total }
-                        ]
-                    };
-
-                    if (iva > 0.01) {
-                        poliza.detalles.push({
-                            cuenta: '118-01-000',
-                            debe: iva,
-                            haber: 0
-                        });
+                    // GENERAR PÓLIZA SEGÚN TIPO
+                    let poliza;
+                    
+                    if (tipoCFDI === 'Egreso') {
+                        // COMPRA: Débito Costo, Crédito Proveedores + IVA Acreditable
+                        poliza = {
+                            fecha: fechaStr,
+                            tipo_poliza: 'Egreso',
+                            concepto: `COMPRA - ${folio} - ${emisor}`,
+                            detalles: [
+                                { cuenta: '501-01-000', debe: subtotal, haber: 0 },
+                                { cuenta: '201-01-000', debe: 0, haber: total }
+                            ]
+                        };
+                        if (iva > 0.01) {
+                            poliza.detalles.push({
+                                cuenta: '118-01-000',
+                                debe: iva,
+                                haber: 0
+                            });
+                        }
+                    } else {
+                        // VENTA: Débito Bancos, Crédito Ingresos + IVA Trasladado
+                        poliza = {
+                            fecha: fechaStr,
+                            tipo_poliza: 'Ingreso',
+                            concepto: `VENTA - ${folio} - ${emisor}`,
+                            detalles: [
+                                { cuenta: '102-01-000', debe: total, haber: 0 },
+                                { cuenta: '401-01-000', debe: 0, haber: subtotal }
+                            ]
+                        };
+                        if (iva > 0.01) {
+                            poliza.detalles.push({
+                                cuenta: '207-01-000',
+                                debe: 0,
+                                haber: iva
+                            });
+                        }
                     }
 
                     polizas.push(poliza);
                 });
+
+                console.log(`Pólizas generadas: ${polizas.length}, Filas vacías saltadas: ${skipRows.length}`);
 
                 if (polizas.length === 0) {
                     mostrarError('❌ No se encontraron facturas válidas en el Excel');
                     return;
                 }
 
-                console.log(`Pólizas generadas: ${polizas.length}`);
                 mostrarPreview(polizas);
                 
                 mostrarCargando(`Guardando ${polizas.length} pólizas en Supabase...`);
                 const resultados = await guardarPolizas(polizas);
                 
                 const exitosas = resultados.filter(r => r.ok).length;
-                mostrarExito(`✓ ${exitosas}/${polizas.length} pólizas creadas en Supabase`);
+                const egresos = polizas.filter(p => p.tipo_poliza === 'Egreso').length;
+                const ingresos = polizas.filter(p => p.tipo_poliza === 'Ingreso').length;
+                
+                mostrarExito(`✓ ${exitosas}/${polizas.length} pólizas creadas (${egresos} Egresos + ${ingresos} Ingresos)`);
 
             } catch (err) {
                 console.error('Error:', err);
@@ -206,7 +238,7 @@
         function mostrarPreview(polizas) {
             let html = '<table><thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Renglones</th></tr></thead><tbody>';
             polizas.forEach(p => {
-                html += `<tr><td>${p.fecha}</td><td>${p.tipo_poliza}</td><td>${p.concepto}</td><td>${p.detalles.length}</td></tr>`;
+                html += `<tr><td>${p.fecha}</td><td style="color:${p.tipo_poliza === 'Egreso' ? '#dc2626' : '#16a34a'}">${p.tipo_poliza}</td><td>${p.concepto.substring(0, 40)}...</td><td>${p.detalles.length}</td></tr>`;
             });
             html += '</tbody></table>';
             
