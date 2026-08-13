@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIF Amir - Contabilidad PF</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.5; }
@@ -128,16 +129,16 @@
                 
                 <div id="polizas-xml" class="view-content">
                     <div class="card">
-                        <h3 style="margin-bottom: 12px;">📤 Cargar XML (CFDI) - Auto-Generar Pólizas</h3>
-                        <p style="color: #94a3b8; margin-bottom: 12px; font-size: 12px;">Carga uno o varios archivos XML de CFDIs. Se generarán pólizas automáticas según NIF México 2026.</p>
+                        <h3 style="margin-bottom: 12px;">📤 Cargar Excel de Facturas → Auto-Generar Pólizas</h3>
+                        <p style="color: #94a3b8; margin-bottom: 12px; font-size: 12px;">Carga archivo Excel (.xlsx) de facturas recibidas. Genera pólizas automáticas según NIF México 2026.</p>
                         
-                        <input type="file" id="xmlFiles" multiple accept=".xml" style="margin-bottom: 12px;">
-                        <button class="btn" onclick="cargarXMLyCFDI()">Procesar XML → Generar Pólizas</button>
-                        <div id="xmlStatus" style="margin-top: 12px;"></div>
+                        <input type="file" id="excelFile" accept=".xlsx" style="margin-bottom: 12px;">
+                        <button class="btn" onclick="cargarExcelYGenerarPolizas()">Procesar Excel → Generar Pólizas</button>
+                        <div id="excelStatus" style="margin-top: 12px;"></div>
                         
-                        <div id="xmlPreview" style="margin-top: 16px; display: none;">
+                        <div id="previewTable" style="margin-top: 16px; display: none;">
                             <h4 style="margin-bottom: 8px;">✓ Pólizas a crear:</h4>
-                            <div id="previewTable" style="overflow-x: auto; font-size: 11px;"></div>
+                            <div id="preview" style="overflow-x: auto; font-size: 11px;"></div>
                         </div>
                     </div>
                 </div>
@@ -175,7 +176,7 @@
         </div>
     </div>
 
-    <div class="version">v2026.08.13.3</div>
+    <div class="version">v2026.08.13.5</div>
 
     <script>
         const supabaseUrl = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
@@ -293,92 +294,90 @@
             }
         }
 
-        // XML CFDI PARSER - NIF México 2026
-        async function cargarXMLyCFDI() {
-            const files = document.getElementById('xmlFiles').files;
-            if (files.length === 0) {
-                document.getElementById('xmlStatus').innerHTML = '<div class="error">Selecciona al menos un archivo XML</div>';
+        // EXCEL PARSER - Facturas Recibidas → Pólizas Automáticas (NIF México 2026)
+        async function cargarExcelYGenerarPolizas() {
+            const file = document.getElementById('excelFile').files[0];
+            if (!file) {
+                document.getElementById('excelStatus').innerHTML = '<div class="error">Selecciona un archivo Excel</div>';
                 return;
             }
 
-            document.getElementById('xmlStatus').innerHTML = '<div class="loading">Parseando XMLs...</div>';
+            document.getElementById('excelStatus').innerHTML = '<div class="loading">Parseando Excel...</div>';
             
             try {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const ws = workbook.Sheets[workbook.SheetNames[0]];
+                const datos = XLSX.utils.sheet_to_json(ws);
+                
                 const polizas = [];
                 
-                for (const file of files) {
-                    const xmlText = await file.text();
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                datos.forEach((row, idx) => {
+                    // Saltar filas vacías
+                    if (!row['▼ Fecha Comprobante'] || !row['Total']) return;
                     
-                    const comprobante = xmlDoc.querySelector('Comprobante');
-                    if (!comprobante) throw new Error(`${file.name}: No es un CFDI válido`);
-                    
-                    const cfdi = {
-                        folio: comprobante.getAttribute('folio'),
-                        serie: comprobante.getAttribute('serie'),
-                        fecha: comprobante.getAttribute('fecha').split('T')[0],
-                        total: parseFloat(comprobante.getAttribute('total') || 0),
-                        subtotal: parseFloat(comprobante.getAttribute('subTotal') || 0),
-                        tipoDeComprobante: comprobante.getAttribute('tipoDeComprobante'),
-                        emisor: xmlDoc.querySelector('Emisor')?.getAttribute('nombre') || 'Emisor',
-                        receptor: xmlDoc.querySelector('Receptor')?.getAttribute('nombre') || 'Receptor'
+                    const factura = {
+                        fecha: formatearFecha(row['▼ Fecha Comprobante']),
+                        folio: row['Folio'],
+                        serie: row['Serie'] || '',
+                        emisor: row['Nombre Emisor'],
+                        total: parseFloat(row['Total']) || 0,
+                        moneda: row['Moneda'] || 'MXN',
+                        tipoCambio: parseFloat(row['Tipo Cambio']) || 1
                     };
                     
-                    // Extraer IVA
-                    let iva = 0;
-                    xmlDoc.querySelectorAll('Traslado[impuesto="002"]').forEach(t => {
-                        iva += parseFloat(t.getAttribute('importe') || 0);
-                    });
-                    cfdi.iva = iva;
+                    // Estimar IVA (16% México 2026)
+                    const subtotal = factura.total / 1.16;
+                    const iva = factura.total - subtotal;
                     
-                    const poliza = generarPolizaDesdeXML(cfdi);
+                    // Generar póliza EGRESO (Compra)
+                    const poliza = {
+                        fecha: factura.fecha,
+                        tipo_poliza: 'Egreso',
+                        concepto: `COMPRA - ${factura.folio} - ${factura.emisor}`,
+                        detalles: [
+                            { cuenta: '501-01-000', nombre: 'Costo de Compra', debe: subtotal, haber: 0 },
+                            { cuenta: '201-01-000', nombre: factura.emisor, debe: 0, haber: factura.total }
+                        ]
+                    };
+                    
+                    // Agregar IVA si aplica
+                    if (iva > 0.01) {
+                        poliza.detalles.push({
+                            cuenta: '118-01-000',
+                            nombre: 'IVA Acreditable',
+                            debe: iva,
+                            haber: 0
+                        });
+                    }
+                    
                     polizas.push(poliza);
+                });
+                
+                if (polizas.length === 0) {
+                    document.getElementById('excelStatus').innerHTML = '<div class="error">No se encontraron facturas válidas</div>';
+                    return;
                 }
                 
                 // Mostrar preview
                 mostrarPreviewPolizas(polizas);
                 
-                // Guardar en BD
+                // Guardar en Supabase
                 const resultados = await guardarPolizasEnSupabase(polizas);
                 const exitosas = resultados.filter(r => r.estado === 'OK').length;
-                document.getElementById('xmlStatus').innerHTML = `<div class="success">✓ ${exitosas}/${polizas.length} pólizas creadas</div>`;
+                document.getElementById('excelStatus').innerHTML = `<div class="success">✓ ${exitosas}/${polizas.length} pólizas creadas</div>`;
                 
             } catch (err) {
-                document.getElementById('xmlStatus').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+                document.getElementById('excelStatus').innerHTML = `<div class="error">Error: ${err.message}</div>`;
             }
         }
 
-        function generarPolizaDesdeXML(cfdi) {
-            const tipoPoliza = cfdi.tipoDeComprobante === 'I' ? 'Ingreso' : 'Egreso';
-            let detalles = [];
-            
-            if (cfdi.tipoDeComprobante === 'E') {
-                // Egreso (Compra)
-                detalles = [
-                    { cuenta: '501-01-000', nombre: 'Costo de Compra', debe: cfdi.subtotal, haber: 0 },
-                    { cuenta: '201-01-000', nombre: cfdi.emisor, debe: 0, haber: cfdi.total }
-                ];
-                if (cfdi.iva > 0) {
-                    detalles.push({ cuenta: '118-01-000', nombre: 'IVA Acreditable', debe: cfdi.iva, haber: 0 });
-                }
-            } else {
-                // Ingreso (Venta)
-                detalles = [
-                    { cuenta: '102-01-000', nombre: 'Bancos Nacionales', debe: cfdi.total, haber: 0 },
-                    { cuenta: '401-01-000', nombre: 'Ingresos', debe: 0, haber: cfdi.subtotal }
-                ];
-                if (cfdi.iva > 0) {
-                    detalles.push({ cuenta: '207-01-000', nombre: 'IVA Trasladado', debe: 0, haber: cfdi.iva });
-                }
-            }
-            
-            return {
-                fecha: cfdi.fecha,
-                tipo_poliza: tipoPoliza,
-                concepto: `${cfdi.tipoDeComprobante === 'E' ? 'COMPRA' : 'VENTA'} - ${cfdi.folio} - ${cfdi.emisor}`,
-                detalles: detalles
-            };
+        function formatearFecha(fecha) {
+            if (!fecha) return new Date().toISOString().split('T')[0];
+            if (typeof fecha === 'string') return fecha.split('T')[0];
+            // Si es número de Excel (días desde 1900)
+            const d = new Date((fecha - 25569) * 86400 * 1000);
+            return d.toISOString().split('T')[0];
         }
 
         function mostrarPreviewPolizas(polizas) {
