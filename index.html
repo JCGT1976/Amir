@@ -126,9 +126,25 @@
             <div class="tab-content" id="tab-polizas">
                 <h2 style="margin-bottom: 16px;">Registro de Pólizas</h2>
                 
-                <div id="polizas-new" class="view-content">
+                <div id="polizas-xml" class="view-content">
                     <div class="card">
-                        <h3 style="margin-bottom: 12px;">Nueva Póliza</h3>
+                        <h3 style="margin-bottom: 12px;">📤 Cargar XML (CFDI) - Auto-Generar Pólizas</h3>
+                        <p style="color: #94a3b8; margin-bottom: 12px; font-size: 12px;">Carga uno o varios archivos XML de CFDIs. Se generarán pólizas automáticas según NIF México 2026.</p>
+                        
+                        <input type="file" id="xmlFiles" multiple accept=".xml" style="margin-bottom: 12px;">
+                        <button class="btn" onclick="cargarXMLyCFDI()">Procesar XML → Generar Pólizas</button>
+                        <div id="xmlStatus" style="margin-top: 12px;"></div>
+                        
+                        <div id="xmlPreview" style="margin-top: 16px; display: none;">
+                            <h4 style="margin-bottom: 8px;">✓ Pólizas a crear:</h4>
+                            <div id="previewTable" style="overflow-x: auto; font-size: 11px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="polizas-new" class="view-content" style="display: none;">
+                    <div class="card">
+                        <h3 style="margin-bottom: 12px;">Nueva Póliza Manual</h3>
                         <label>Fecha:</label>
                         <input type="date" id="polizaFecha" style="width: 100%; margin-bottom: 12px;">
                         
@@ -159,7 +175,7 @@
         </div>
     </div>
 
-    <div class="version">v2026.08.13.1</div>
+    <div class="version">v2026.08.13.3</div>
 
     <script>
         const supabaseUrl = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
@@ -275,6 +291,153 @@
             } catch (err) {
                 document.getElementById('polizaStatus').innerHTML = `<div class="error">Error: ${err.message}</div>`;
             }
+        }
+
+        // XML CFDI PARSER - NIF México 2026
+        async function cargarXMLyCFDI() {
+            const files = document.getElementById('xmlFiles').files;
+            if (files.length === 0) {
+                document.getElementById('xmlStatus').innerHTML = '<div class="error">Selecciona al menos un archivo XML</div>';
+                return;
+            }
+
+            document.getElementById('xmlStatus').innerHTML = '<div class="loading">Parseando XMLs...</div>';
+            
+            try {
+                const polizas = [];
+                
+                for (const file of files) {
+                    const xmlText = await file.text();
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                    
+                    const comprobante = xmlDoc.querySelector('Comprobante');
+                    if (!comprobante) throw new Error(`${file.name}: No es un CFDI válido`);
+                    
+                    const cfdi = {
+                        folio: comprobante.getAttribute('folio'),
+                        serie: comprobante.getAttribute('serie'),
+                        fecha: comprobante.getAttribute('fecha').split('T')[0],
+                        total: parseFloat(comprobante.getAttribute('total') || 0),
+                        subtotal: parseFloat(comprobante.getAttribute('subTotal') || 0),
+                        tipoDeComprobante: comprobante.getAttribute('tipoDeComprobante'),
+                        emisor: xmlDoc.querySelector('Emisor')?.getAttribute('nombre') || 'Emisor',
+                        receptor: xmlDoc.querySelector('Receptor')?.getAttribute('nombre') || 'Receptor'
+                    };
+                    
+                    // Extraer IVA
+                    let iva = 0;
+                    xmlDoc.querySelectorAll('Traslado[impuesto="002"]').forEach(t => {
+                        iva += parseFloat(t.getAttribute('importe') || 0);
+                    });
+                    cfdi.iva = iva;
+                    
+                    const poliza = generarPolizaDesdeXML(cfdi);
+                    polizas.push(poliza);
+                }
+                
+                // Mostrar preview
+                mostrarPreviewPolizas(polizas);
+                
+                // Guardar en BD
+                const resultados = await guardarPolizasEnSupabase(polizas);
+                const exitosas = resultados.filter(r => r.estado === 'OK').length;
+                document.getElementById('xmlStatus').innerHTML = `<div class="success">✓ ${exitosas}/${polizas.length} pólizas creadas</div>`;
+                
+            } catch (err) {
+                document.getElementById('xmlStatus').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        function generarPolizaDesdeXML(cfdi) {
+            const tipoPoliza = cfdi.tipoDeComprobante === 'I' ? 'Ingreso' : 'Egreso';
+            let detalles = [];
+            
+            if (cfdi.tipoDeComprobante === 'E') {
+                // Egreso (Compra)
+                detalles = [
+                    { cuenta: '501-01-000', nombre: 'Costo de Compra', debe: cfdi.subtotal, haber: 0 },
+                    { cuenta: '201-01-000', nombre: cfdi.emisor, debe: 0, haber: cfdi.total }
+                ];
+                if (cfdi.iva > 0) {
+                    detalles.push({ cuenta: '118-01-000', nombre: 'IVA Acreditable', debe: cfdi.iva, haber: 0 });
+                }
+            } else {
+                // Ingreso (Venta)
+                detalles = [
+                    { cuenta: '102-01-000', nombre: 'Bancos Nacionales', debe: cfdi.total, haber: 0 },
+                    { cuenta: '401-01-000', nombre: 'Ingresos', debe: 0, haber: cfdi.subtotal }
+                ];
+                if (cfdi.iva > 0) {
+                    detalles.push({ cuenta: '207-01-000', nombre: 'IVA Trasladado', debe: 0, haber: cfdi.iva });
+                }
+            }
+            
+            return {
+                fecha: cfdi.fecha,
+                tipo_poliza: tipoPoliza,
+                concepto: `${cfdi.tipoDeCompromante === 'E' ? 'COMPRA' : 'VENTA'} - ${cfdi.folio} - ${cfdi.emisor}`,
+                detalles: detalles
+            };
+        }
+
+        function mostrarPreviewPolizas(polizas) {
+            let html = '<table style="width:100%; border-collapse: collapse; font-size: 11px;"><thead><tr><th style="border-bottom:1px solid #ccc;padding:4px;">Fecha</th><th>Tipo</th><th>Concepto</th><th>Renglones</th></tr></thead><tbody>';
+            
+            polizas.forEach((p, i) => {
+                html += `<tr style="border-bottom:1px solid #ddd;"><td>${p.fecha}</td><td>${p.tipo_poliza}</td><td>${p.concepto}</td><td>${p.detalles.length}</td></tr>`;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('previewTable').innerHTML = html;
+            document.getElementById('xmlPreview').style.display = 'block';
+        }
+
+        async function guardarPolizasEnSupabase(polizas) {
+            const resultados = [];
+            
+            for (const poliza of polizas) {
+                try {
+                    const { data: polizaData, error: polizaError } = await supabase
+                        .from('amir_polizas')
+                        .insert([{
+                            fecha: poliza.fecha,
+                            tipo_poliza: poliza.tipo_poliza,
+                            concepto: poliza.concepto
+                        }])
+                        .select();
+                    
+                    if (polizaError) throw polizaError;
+                    
+                    const polizaId = polizaData[0].id;
+                    
+                    // Insertar detalles
+                    for (const detalle of poliza.detalles) {
+                        const { data: cuentaData } = await supabase
+                            .from('amir_catalogo_cuentas')
+                            .select('id')
+                            .eq('codigo', detalle.cuenta)
+                            .single();
+                        
+                        if (cuentaData) {
+                            await supabase
+                                .from('amir_polizas_detalles')
+                                .insert([{
+                                    poliza_id: polizaId,
+                                    cuenta_id: cuentaData.id,
+                                    debe: detalle.debe,
+                                    haber: detalle.haber
+                                }]);
+                        }
+                    }
+                    
+                    resultados.push({ estado: 'OK' });
+                } catch (err) {
+                    resultados.push({ estado: 'ERROR', mensaje: err.message });
+                }
+            }
+            
+            return resultados;
         }
 
         // LOAD ON INIT
