@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIF Amir - Contabilidad PF</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.5; }
+        .header { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); padding: 20px; border-bottom: 1px solid #1e40af; }
+        .header h1 { font-size: 24px; font-weight: 700; }
+        .header p { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+        .tabs { display: flex; gap: 0; border-bottom: 1px solid #334155; background: #0f172a; }
+        .tab { padding: 12px 16px; cursor: pointer; border-bottom: 2px solid transparent; font-size: 13px; transition: all 0.2s; }
+        .tab.active { border-bottom-color: #3b82f6; color: #3b82f6; background: #1e293b; }
+        .tab:hover { background: #1e293b; }
+        .container { display: flex; height: calc(100vh - 120px); }
+        .sidebar { width: 250px; background: #1e293b; border-right: 1px solid #334155; overflow-y: auto; padding: 16px; }
+        .main { flex: 1; overflow-y: auto; padding: 20px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+        .btn { background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .btn:hover { background: #2563eb; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        input[type="text"], input[type="date"], select, textarea { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; padding: 8px; border-radius: 6px; font-size: 13px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #334155; }
+        th { background: #0f172a; font-weight: 600; }
+        tr:hover { background: #0f172a; }
+        .loading { text-align: center; padding: 40px; color: #94a3b8; }
+        .error { background: #7f1d1d; color: #fecaca; padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+        .success { background: #1f2937; color: #86efac; padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+        .sidebar-item { padding: 8px 12px; margin-bottom: 4px; border-radius: 4px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .sidebar-item:hover { background: #334155; }
+        .sidebar-item.active { background: #3b82f6; color: white; }
+        .version { position: fixed; bottom: 10px; right: 10px; font-size: 10px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 SIF Amir - Contabilidad PF</h1>
+        <p>Sistema de Información Financiera para Amir Tafreshi (Persona Física)</p>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="catalogo">📋 Catálogo</div>
+        <div class="tab" data-tab="balanzas">⚖️ Balanzas</div>
+        <div class="tab" data-tab="estados">📑 Estados Financieros</div>
+        <div class="tab" data-tab="ratios">📈 Ratios</div>
+        <div class="tab" data-tab="polizas">🔐 Pólizas</div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <h3 style="font-size: 12px; margin-bottom: 12px; text-transform: uppercase; opacity: 0.7;">Navegación</h3>
+            <div class="sidebar-item active" data-view="catalogo-list">Ver Catálogo</div>
+            <div class="sidebar-item" data-view="catalogo-import">Importar Excel</div>
+            <div class="sidebar-item" data-view="balanzas-date">Balanza Mensual</div>
+            <div class="sidebar-item" data-view="polizas-new">Nueva Póliza</div>
+            <div class="sidebar-item" data-view="polizas-list">Historial</div>
+        </div>
+
+        <div class="main">
+            <!-- TAB: CATÁLOGO -->
+            <div class="tab-content active" id="tab-catalogo">
+                <h2 style="margin-bottom: 16px;">Catálogo de Cuentas</h2>
+                
+                <div id="catalogo-list" class="view-content">
+                    <div class="card">
+                        <input type="text" id="filterCatalogo" placeholder="Buscar código o nombre..." style="width: 100%; margin-bottom: 12px;">
+                        <div id="catalogoTable" style="overflow-x: auto;">
+                            <div class="loading">Cargando catálogo...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="catalogo-import" class="view-content" style="display: none;">
+                    <div class="card">
+                        <h3 style="margin-bottom: 12px;">Importar Catálogo (Excel)</h3>
+                        <input type="file" id="excelFile" accept=".xlsx" style="margin-bottom: 12px;">
+                        <button class="btn" onclick="importarCatalogo()">Cargar Catálogo</button>
+                        <div id="importStatus" style="margin-top: 12px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: BALANZAS -->
+            <div class="tab-content" id="tab-balanzas">
+                <h2 style="margin-bottom: 16px;">Balanzas de Comprobación</h2>
+                
+                <div id="balanzas-date" class="view-content">
+                    <div class="card">
+                        <label>Fecha de Cierre:</label>
+                        <input type="date" id="balanzaDate" style="margin-bottom: 12px;">
+                        <button class="btn" onclick="generarBalanza()">Generar Balanza</button>
+                        <div id="balanzaResult" style="margin-top: 16px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: ESTADOS FINANCIEROS -->
+            <div class="tab-content" id="tab-estados">
+                <h2 style="margin-bottom: 16px;">Estados Financieros</h2>
+                <div class="card">
+                    <p style="color: #94a3b8;">Estados Financieros (Balance General, Estado de Resultados, EFE)</p>
+                    <button class="btn" onclick="generarEstados()">Generar Estados</button>
+                    <div id="estadosResult" style="margin-top: 16px;"></div>
+                </div>
+            </div>
+
+            <!-- TAB: RATIOS -->
+            <div class="tab-content" id="tab-ratios">
+                <h2 style="margin-bottom: 16px;">Análisis de Ratios</h2>
+                <div class="card">
+                    <p style="color: #94a3b8;">Ratios Financieros (Liquidez, Rentabilidad, Endeudamiento)</p>
+                    <button class="btn" onclick="calcularRatios()">Calcular Ratios</button>
+                    <div id="ratiosResult" style="margin-top: 16px;"></div>
+                </div>
+            </div>
+
+            <!-- TAB: PÓLIZAS -->
+            <div class="tab-content" id="tab-polizas">
+                <h2 style="margin-bottom: 16px;">Registro de Pólizas</h2>
+                
+                <div id="polizas-new" class="view-content">
+                    <div class="card">
+                        <h3 style="margin-bottom: 12px;">Nueva Póliza</h3>
+                        <label>Fecha:</label>
+                        <input type="date" id="polizaFecha" style="width: 100%; margin-bottom: 12px;">
+                        
+                        <label>Tipo de Póliza:</label>
+                        <select id="polizaTipo" style="width: 100%; margin-bottom: 12px;">
+                            <option value="Ingreso">Ingreso</option>
+                            <option value="Egreso">Egreso</option>
+                            <option value="Diario">Diario</option>
+                        </select>
+                        
+                        <label>Concepto:</label>
+                        <textarea id="polizaConcepto" placeholder="Descripción..." style="width: 100%; height: 60px; margin-bottom: 12px;"></textarea>
+                        
+                        <button class="btn" onclick="crearPoliza()">Crear Póliza</button>
+                        <div id="polizaStatus" style="margin-top: 12px;"></div>
+                    </div>
+                </div>
+
+                <div id="polizas-list" class="view-content" style="display: none;">
+                    <div class="card">
+                        <h3 style="margin-bottom: 12px;">Historial de Pólizas</h3>
+                        <div id="polizasTable" style="overflow-x: auto;">
+                            <div class="loading">Cargando pólizas...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="version">v2026.08.13.1</div>
+
+    <script>
+        const supabaseUrl = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
+        const supabaseKey = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
+        const { createClient } = window.supabase;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // TAB SWITCHING
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(`tab-${this.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // SIDEBAR VIEW SWITCHING
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const viewId = this.dataset.view;
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.view-content').forEach(vc => vc.style.display = 'none');
+                this.classList.add('active');
+                document.getElementById(viewId).style.display = 'block';
+            });
+        });
+
+        // CARGAR CATÁLOGO
+        async function cargarCatalogo() {
+            try {
+                const { data, error } = await supabase
+                    .from('amir_catalogo_cuentas')
+                    .select('*')
+                    .order('nivel', { ascending: true })
+                    .order('codigo', { ascending: true });
+                
+                if (error) throw error;
+
+                let html = `<table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Nivel</th>
+                            <th>Agrupador SAT</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                
+                (data || []).forEach(cuenta => {
+                    html += `<tr>
+                        <td>${cuenta.codigo}</td>
+                        <td>${cuenta.nombre}</td>
+                        <td>${cuenta.tipo}</td>
+                        <td>${cuenta.nivel}</td>
+                        <td>${cuenta.agrupador_sat || '-'}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                document.getElementById('catalogoTable').innerHTML = html;
+            } catch (err) {
+                document.getElementById('catalogoTable').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        async function generarBalanza() {
+            document.getElementById('balanzaResult').innerHTML = '<div class="loading">Generando balanza...</div>';
+            // Implementar lógica de balanza
+            setTimeout(() => {
+                document.getElementById('balanzaResult').innerHTML = '<div class="success">Balanza generada (En desarrollo)</div>';
+            }, 1000);
+        }
+
+        async function generarEstados() {
+            document.getElementById('estadosResult').innerHTML = '<div class="loading">Generando estados...</div>';
+            setTimeout(() => {
+                document.getElementById('estadosResult').innerHTML = '<div class="success">Estados generados (En desarrollo)</div>';
+            }, 1000);
+        }
+
+        async function calcularRatios() {
+            document.getElementById('ratiosResult').innerHTML = '<div class="loading">Calculando ratios...</div>';
+            setTimeout(() => {
+                document.getElementById('ratiosResult').innerHTML = '<div class="success">Ratios calculados (En desarrollo)</div>';
+            }, 1000);
+        }
+
+        async function crearPoliza() {
+            const fecha = document.getElementById('polizaFecha').value;
+            const tipo = document.getElementById('polizaTipo').value;
+            const concepto = document.getElementById('polizaConcepto').value;
+            
+            if (!fecha || !tipo || !concepto) {
+                document.getElementById('polizaStatus').innerHTML = '<div class="error">Completa todos los campos</div>';
+                return;
+            }
+
+            document.getElementById('polizaStatus').innerHTML = '<div class="loading">Creando póliza...</div>';
+
+            try {
+                const { data, error } = await supabase
+                    .from('amir_polizas')
+                    .insert([{ fecha, tipo_poliza: tipo, concepto }])
+                    .select();
+                
+                if (error) throw error;
+                document.getElementById('polizaStatus').innerHTML = '<div class="success">✓ Póliza creada</div>';
+                document.getElementById('polizaFecha').value = '';
+                document.getElementById('polizaConcepto').value = '';
+            } catch (err) {
+                document.getElementById('polizaStatus').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        // LOAD ON INIT
+        document.addEventListener('DOMContentLoaded', cargarCatalogo);
+    </script>
+</body>
+</html>
