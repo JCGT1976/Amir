@@ -6,179 +6,653 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        h1 { margin-bottom: 20px; color: #f1f5f9; }
-        .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-        h2 { margin-bottom: 12px; color: #cbd5e1; }
-        p { margin-bottom: 12px; color: #94a3b8; font-size: 14px; }
-        label { display: block; margin-top: 12px; margin-bottom: 6px; font-weight: 600; }
-        input[type="file"] { padding: 8px; background: #334155; color: #e2e8f0; width: 100%; border-radius: 4px; cursor: pointer; }
-        button { padding: 10px 20px; margin-top: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; }
-        button:hover { background: #2563eb; }
-        #msg { margin-top: 16px; padding: 12px; border-radius: 6px; display: none; }
-        .success { background: #dcfce7; color: #166534; display: block !important; }
-        .error { background: #fee2e2; color: #991b1b; display: block !important; }
-        .info { background: #dbeafe; color: #1e40af; display: block !important; }
-        table { width: 100%; margin-top: 16px; border-collapse: collapse; font-size: 12px; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #334155; }
-        th { background: #334155; font-weight: 600; }
-        #preview { display: none; margin-top: 20px; }
-        #preview.show { display: block; }
-        .version { text-align: center; color: #64748b; font-size: 12px; margin-top: 40px; }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;font-size:13px}
+        /* NAV */
+        .nav{display:flex;gap:4px;background:#1e293b;border-bottom:1px solid #334155;padding:8px 16px}
+        .nav-btn{padding:7px 16px;border:none;border-radius:5px;cursor:pointer;font-size:13px;font-weight:600;background:transparent;color:#94a3b8;transition:all .15s}
+        .nav-btn:hover{background:#334155;color:#e2e8f0}
+        .nav-btn.active{background:#3b82f6;color:#fff}
+        /* VIEWS */
+        .view{display:none;padding:20px}
+        .view.active{display:block}
+        /* CARDS */
+        .card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:18px;margin-bottom:16px}
+        .card h3{margin-bottom:12px;color:#cbd5e1;font-size:14px}
+        /* TABLES */
+        table{width:100%;border-collapse:collapse;font-size:12px}
+        th{background:#334155;padding:8px;text-align:left;font-weight:600;color:#cbd5e1;position:sticky;top:0}
+        td{padding:7px 8px;border-bottom:1px solid #1e293b}
+        tr:hover td{background:#1e293b}
+        .tbl-wrap{max-height:500px;overflow-y:auto;border:1px solid #334155;border-radius:6px}
+        /* FORMS */
+        label{display:block;margin-top:10px;margin-bottom:4px;font-weight:600;color:#94a3b8;font-size:12px}
+        input,select{width:100%;padding:8px;background:#334155;border:1px solid #475569;border-radius:5px;color:#e2e8f0;font-size:13px}
+        input:focus,select:focus{outline:none;border-color:#3b82f6}
+        input[type="file"]{cursor:pointer}
+        /* BUTTONS */
+        .btn{padding:8px 18px;border:none;border-radius:5px;cursor:pointer;font-weight:600;font-size:13px;transition:all .15s}
+        .btn-primary{background:#3b82f6;color:#fff}.btn-primary:hover{background:#2563eb}
+        .btn-success{background:#16a34a;color:#fff}.btn-success:hover{background:#15803d}
+        .btn-danger{background:#dc2626;color:#fff}.btn-danger:hover{background:#b91c1c}
+        .btn-sm{padding:4px 10px;font-size:11px}
+        /* MESSAGES */
+        .msg{padding:10px 14px;border-radius:5px;margin-top:10px;display:none}
+        .msg.show{display:block}
+        .msg.success{background:#dcfce7;color:#166534}
+        .msg.error{background:#fee2e2;color:#991b1b}
+        .msg.info{background:#dbeafe;color:#1e40af}
+        /* MODAL */
+        .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center}
+        .modal-bg.show{display:flex}
+        .modal{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:24px;width:520px;max-width:95vw}
+        .modal h3{margin-bottom:16px;font-size:15px}
+        .modal-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+        /* LIBRO DIARIO */
+        .poliza-card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px;margin-bottom:12px}
+        .poliza-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+        .poliza-meta{font-size:11px;color:#94a3b8}
+        .poliza-meta span{margin-right:16px}
+        .poliza-meta strong{color:#e2e8f0}
+        .badge{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700}
+        .badge-egreso{background:#fef2f2;color:#dc2626}
+        .badge-ingreso{background:#f0fdf4;color:#16a34a}
+        .badge-diario{background:#eff6ff;color:#2563eb}
+        .sumas{text-align:right;margin-top:8px;font-size:12px;color:#94a3b8}
+        .sumas strong{color:#e2e8f0}
+        .sumas .cuadre{color:#16a34a;font-weight:700}
+        .sumas .descuadre{color:#dc2626;font-weight:700}
+        /* FILTERS */
+        .filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end}
+        .filters>div{flex:1;min-width:140px}
+        /* UTILS */
+        .text-right{text-align:right}
+        .text-green{color:#16a34a;font-weight:600}
+        .text-red{color:#dc2626;font-weight:600}
+        .text-blue{color:#3b82f6}
+        .version{text-align:center;color:#475569;font-size:11px;padding:20px}
+        .empty{text-align:center;color:#475569;padding:40px}
+        .actions{display:flex;gap:6px}
+        h1{padding:16px 20px 0;font-size:18px;color:#f1f5f9}
+        .subtitle{padding:4px 20px 12px;color:#64748b;font-size:12px}
+        /* GRID 2 col */
+        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        @media(max-width:640px){.grid2{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📊 SIF-Amir (Persona Física)</h1>
+<h1>📊 SIF-Amir <span style="color:#64748b;font-size:13px;font-weight:400">(Persona Física)</span></h1>
+<p class="subtitle">Contabilidad Electrónica · NIF México 2026</p>
+
+<div class="nav">
+    <button class="nav-btn active" onclick="setView('polizas')">📋 Pólizas / Cargar</button>
+    <button class="nav-btn" onclick="setView('diario')">📖 Libro Diario</button>
+    <button class="nav-btn" onclick="setView('catalogo')">🗂️ Catálogo de Cuentas</button>
+</div>
+
+<!-- ===================== VIEW: PÓLIZAS ===================== -->
+<div class="view active" id="view-polizas">
+    <div class="card">
+        <h3>📤 Cargar Excel mensual → Generar Pólizas + TXT ContPAQ</h3>
+        <label>Archivo Excel (XML Recibidos / Facturas):</label>
+        <input type="file" id="excelFile" accept=".xlsx,.xls">
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="procesarExcel()">▶ Procesar y Guardar</button>
+            <button class="btn btn-success" id="btnTxt" style="display:none" onclick="descargarTXT()">⬇ Descargar TXT ContPAQ</button>
+        </div>
+        <div class="msg" id="msgPolizas"></div>
+    </div>
+
+    <div id="previewPolizas" style="display:none">
         <div class="card">
-            <h2>📤 Cargar Facturas → Generar Pólizas</h2>
-            <p>Carga archivo Excel mensual. Genera pólizas automáticas (NIF México 2026).</p>
-            <label>Archivo Excel:</label>
-            <input type="file" id="excelFile" accept=".xlsx,.xls">
-            <button id="btnProcesar">▶ Procesar Excel</button>
-            <div id="msg"></div>
-            <div id="preview">
-                <h3 style="margin-bottom: 8px;">Pólizas a crear:</h3>
-                <table id="tabla"></table>
+            <h3>Vista previa de pólizas generadas</h3>
+            <div class="tbl-wrap">
+                <table>
+                    <thead><tr><th>Fecha</th><th>Tipo</th><th>Folio</th><th>Emisor</th><th>Subtotal</th><th>IVA</th><th>Total</th><th>UUID</th></tr></thead>
+                    <tbody id="previewBody"></tbody>
+                </table>
             </div>
         </div>
     </div>
-    <div class="version">v2026.08.13.10</div>
+</div>
 
-    <script>
-    (function() {
-        // Scope aislado para evitar conflictos con scripts del padre
+<!-- ===================== VIEW: LIBRO DIARIO ===================== -->
+<div class="view" id="view-diario">
+    <div class="filters">
+        <div>
+            <label>Mes</label>
+            <select id="filtroMes">
+                <option value="">Todos</option>
+                <option value="01">Enero</option><option value="02">Febrero</option>
+                <option value="03">Marzo</option><option value="04">Abril</option>
+                <option value="05">Mayo</option><option value="06">Junio</option>
+                <option value="07">Julio</option><option value="08">Agosto</option>
+                <option value="09">Septiembre</option><option value="10">Octubre</option>
+                <option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+        </div>
+        <div>
+            <label>Año</label>
+            <select id="filtroAnio">
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+            </select>
+        </div>
+        <div>
+            <label>Tipo</label>
+            <select id="filtroTipo">
+                <option value="">Todos</option>
+                <option value="Egreso">Egreso</option>
+                <option value="Ingreso">Ingreso</option>
+                <option value="Diario">Diario</option>
+            </select>
+        </div>
+        <div style="display:flex;align-items:flex-end">
+            <button class="btn btn-primary" onclick="cargarDiario()">🔍 Buscar</button>
+        </div>
+    </div>
+    <div id="diarioContent"><div class="empty">Selecciona filtros y presiona Buscar</div></div>
+</div>
 
-        var sbClient = window.supabase.createClient(
-            'https://nzrzrbatcmzcmrmyrama.supabase.co',
-            'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X'
-        );
+<!-- ===================== VIEW: CATÁLOGO ===================== -->
+<div class="view" id="view-catalogo">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" id="buscarCuenta" placeholder="🔍 Buscar cuenta..." style="width:220px" oninput="filtrarCatalogo()">
+            <select id="filtroTipoCuenta" style="width:180px" onchange="filtrarCatalogo()">
+                <option value="">Todos los tipos</option>
+                <option value="A">Activo</option>
+                <option value="D">Pasivo</option>
+                <option value="E">Capital Deudora</option>
+                <option value="F">Capital Acreedora</option>
+                <option value="G">Resultados Deudora</option>
+                <option value="H">Resultados Acreedora</option>
+            </select>
+        </div>
+        <button class="btn btn-success" onclick="abrirModalCuenta(null)">+ Nueva Cuenta</button>
+    </div>
+    <div class="tbl-wrap">
+        <table id="tablaCatalogo">
+            <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Nivel</th><th>Agrup. SAT</th><th>Acciones</th></tr></thead>
+            <tbody id="catalogoBody"></tbody>
+        </table>
+    </div>
+    <div class="msg" id="msgCatalogo"></div>
+</div>
 
-        document.getElementById('btnProcesar').addEventListener('click', procesarExcel);
+<!-- ===================== MODAL CUENTA ===================== -->
+<div class="modal-bg" id="modalCuenta">
+    <div class="modal">
+        <h3 id="modalTitulo">Nueva Cuenta</h3>
+        <input type="hidden" id="cuentaId">
+        <div class="grid2">
+            <div>
+                <label>Código *</label>
+                <input type="text" id="cuentaCodigo" placeholder="Ej: 201-05-000">
+            </div>
+            <div>
+                <label>Nivel</label>
+                <select id="cuentaNivel">
+                    <option value="1">1 - Mayor</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4" selected>4 - Subcuenta</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+        </div>
+        <label>Nombre *</label>
+        <input type="text" id="cuentaNombre" placeholder="Nombre de la cuenta">
+        <label>Tipo *</label>
+        <select id="cuentaTipo">
+            <option value="A Activo Deudora">A - Activo Deudora</option>
+            <option value="B Activo Acreedora">B - Activo Acreedora</option>
+            <option value="D Pasivo Acreedora">D - Pasivo Acreedora</option>
+            <option value="E Capital Deudora">E - Capital Deudora</option>
+            <option value="F Capital Acreedora">F - Capital Acreedora</option>
+            <option value="G Resultados Deudora">G - Resultados Deudora</option>
+            <option value="H Resultados Acreedora">H - Resultados Acreedora</option>
+        </select>
+        <label>Agrupador SAT</label>
+        <input type="number" id="cuentaSAT" placeholder="Ej: 201.01" step="0.01">
+        <div class="modal-actions">
+            <button class="btn btn-danger btn-sm" id="btnEliminar" style="display:none;margin-right:auto" onclick="eliminarCuenta()">Eliminar</button>
+            <button class="btn" style="background:#334155;color:#e2e8f0" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="guardarCuenta()">Guardar</button>
+        </div>
+    </div>
+</div>
 
-        async function procesarExcel() {
-            var file = document.getElementById('excelFile').files[0];
-            if (!file) { mostrar('❌ Selecciona un archivo', 'error'); return; }
+<div class="version">v2026.08.13.11</div>
 
-            mostrar('⏳ Leyendo Excel...', 'info');
+<script>
+(function() {
 
-            try {
-                var arrayBuffer = await file.arrayBuffer();
-                var workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                var ws = workbook.Sheets[workbook.SheetNames[0]];
-                var datos = XLSX.utils.sheet_to_json(ws, { defval: '' });
+var sb = window.supabase.createClient(
+    'https://nzrzrbatcmzcmrmyrama.supabase.co',
+    'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X'
+);
 
-                var polizas = [];
+var polizasGeneradas = [];
+var catalogoCache = [];
 
-                datos.forEach(function(row, idx) {
-                    var fecha    = row['▼ Fecha Comprobante'];
-                    var total    = parseFloat(row['Total']) || 0;
-                    var folio    = row['Folio'] || ('SN-' + idx);
-                    var emisor   = row['Nombre Emisor'] || 'Sin emisor';
-                    var tipoCFDI = row['Tipo Comprobante Desc'] || '';
+// ═══════════════════════════════════════════
+// NAVEGACIÓN
+// ═══════════════════════════════════════════
+function setView(name) {
+    document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+    document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.getElementById('view-' + name).classList.add('active');
+    event.target.classList.add('active');
+    if (name === 'catalogo') cargarCatalogo();
+}
+window.setView = setView;
 
-                    if (!fecha || total <= 0) return;
-                    if (tipoCFDI !== 'Egreso' && tipoCFDI !== 'Ingreso') return;
+// ═══════════════════════════════════════════
+// PÓLIZAS - PROCESAR EXCEL
+// ═══════════════════════════════════════════
+async function procesarExcel() {
+    var file = document.getElementById('excelFile').files[0];
+    if (!file) { mostrarMsg('msgPolizas', 'Selecciona un archivo Excel', 'error'); return; }
 
-                    // Parsear fecha DD/MM/YYYY → YYYY-MM-DD
-                    var fechaStr = fecha;
-                    if (typeof fecha === 'number') {
-                        var d = new Date((fecha - 25569) * 86400000);
-                        fechaStr = d.toISOString().split('T')[0];
-                    } else if (typeof fecha === 'string' && fecha.indexOf('/') > -1) {
-                        var parts = fecha.split('/');
-                        fechaStr = parts[2] + '-' + parts[1] + '-' + parts[0];
-                    }
+    mostrarMsg('msgPolizas', '⏳ Leyendo Excel...', 'info');
+    document.getElementById('btnTxt').style.display = 'none';
+    document.getElementById('previewPolizas').style.display = 'none';
 
-                    var subtotal = total / 1.16;
-                    var iva      = total - subtotal;
+    try {
+        var ab = await file.arrayBuffer();
+        var wb = XLSX.read(ab, { type: 'array' });
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        var datos = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-                    var detalles = [];
-                    if (tipoCFDI === 'Egreso') {
-                        detalles = [
-                            { cuenta: '501-01-000', debe: subtotal, haber: 0 },
-                            { cuenta: '201-01-000', debe: 0,        haber: total }
-                        ];
-                        if (iva > 0.01) detalles.push({ cuenta: '118-01-000', debe: iva, haber: 0 });
-                    } else {
-                        detalles = [
-                            { cuenta: '102-01-000', debe: total, haber: 0 },
-                            { cuenta: '401-01-000', debe: 0,     haber: subtotal }
-                        ];
-                        if (iva > 0.01) detalles.push({ cuenta: '207-01-000', debe: 0, haber: iva });
-                    }
+        mostrarMsg('msgPolizas', '⏳ Generando pólizas...', 'info');
+        polizasGeneradas = [];
 
-                    polizas.push({ fecha: fechaStr, tipo: tipoCFDI, folio: folio, emisor: emisor, total: total, subtotal: subtotal.toFixed(2), iva: iva.toFixed(2), detalles: detalles });
-                });
+        datos.forEach(function(row, idx) {
+            var fecha    = row['▼ Fecha Comprobante'];
+            var total    = parseFloat(row['Total']) || 0;
+            var folio    = String(row['Folio'] || ('SN-' + idx));
+            var emisor   = row['Nombre Emisor'] || 'Sin emisor';
+            var tipoCFDI = row['Tipo Comprobante Desc'] || '';
+            var uuid     = row['UUID'] || '';
+            var rfc      = row['RFC Emisor'] || '';
 
-                if (polizas.length === 0) { mostrar('❌ No se encontraron facturas válidas', 'error'); return; }
+            if (!fecha || total <= 0) return;
+            if (tipoCFDI !== 'Egreso' && tipoCFDI !== 'Ingreso') return;
 
-                mostrarPreview(polizas);
-                mostrar('⏳ Guardando ' + polizas.length + ' pólizas en Supabase...', 'info');
-
-                var resultados = await guardarPolizas(polizas);
-                var exitosas = resultados.filter(function(r) { return r.ok; }).length;
-                var egresos  = polizas.filter(function(p)  { return p.tipo === 'Egreso'; }).length;
-                var ingresos = polizas.filter(function(p)  { return p.tipo === 'Ingreso'; }).length;
-
-                mostrar('✓ ' + exitosas + '/' + polizas.length + ' pólizas creadas (' + egresos + ' Egresos + ' + ingresos + ' Ingresos)', 'success');
-
-            } catch(err) {
-                console.error(err);
-                mostrar('❌ ' + err.message, 'error');
+            // Parsear fecha DD/MM/YYYY → YYYY-MM-DD
+            var fechaStr = fecha;
+            if (typeof fecha === 'number') {
+                var d = new Date((fecha - 25569) * 86400000);
+                fechaStr = d.toISOString().split('T')[0];
+            } else if (typeof fecha === 'string' && fecha.indexOf('/') > -1) {
+                var p = fecha.split('/');
+                fechaStr = p[2] + '-' + p[1] + '-' + p[0];
             }
-        }
 
-        async function guardarPolizas(polizas) {
-            var resultados = [];
-            for (var i = 0; i < polizas.length; i++) {
-                var p = polizas[i];
-                try {
-                    var ins = await sbClient.from('amir_polizas').insert({
-                        fecha: p.fecha, tipo_poliza: p.tipo, concepto: p.tipo + ' - ' + p.folio + ' - ' + p.emisor
-                    }).select();
-                    if (ins.error) throw ins.error;
+            var subtotal = total / 1.16;
+            var iva = total - subtotal;
 
-                    var polizaId = ins.data[0].id;
-                    for (var j = 0; j < p.detalles.length; j++) {
-                        var det = p.detalles[j];
-                        var ctaRes = await sbClient.from('amir_catalogo_cuentas').select('id').eq('codigo', det.cuenta).single();
-                        if (ctaRes.error) { console.warn('Cuenta no encontrada: ' + det.cuenta); continue; }
-                        await sbClient.from('amir_polizas_detalles').insert({
-                            poliza_id: polizaId, cuenta_id: ctaRes.data.id, debe: det.debe, haber: det.haber
-                        });
-                    }
-                    resultados.push({ ok: true });
-                } catch(err) {
-                    console.error(err);
-                    resultados.push({ ok: false });
-                }
+            var detalles = [];
+            if (tipoCFDI === 'Egreso') {
+                // COMPRA: Cargo=Gastos/Compras, Abono=Proveedores, Cargo=IVA Acred
+                detalles = [
+                    { cuenta: '502-01-000', tipo_mov: 0, importe: subtotal, concepto: 'COMPRA ' + folio + ' ' + emisor },
+                    { cuenta: '201-01-000', tipo_mov: 1, importe: total,    concepto: emisor }
+                ];
+                if (iva > 0.01) detalles.push({ cuenta: '118-01-000', tipo_mov: 0, importe: iva, concepto: 'IVA ' + folio });
+            } else {
+                // VENTA: Cargo=Clientes, Abono=Ingresos, Abono=IVA Trasl
+                detalles = [
+                    { cuenta: '105-01-000', tipo_mov: 0, importe: total,    concepto: emisor },
+                    { cuenta: '401-01-000', tipo_mov: 1, importe: subtotal, concepto: 'VENTA ' + folio }
+                ];
+                if (iva > 0.01) detalles.push({ cuenta: '207-01-000', tipo_mov: 1, importe: iva, concepto: 'IVA ' + folio });
             }
-            return resultados;
-        }
 
-        function mostrarPreview(polizas) {
-            var html = '<thead><tr><th>Fecha</th><th>Tipo</th><th>Folio</th><th>Subtotal</th><th>IVA</th><th>Total</th></tr></thead><tbody>';
-            var muestra = polizas.slice(0, 5);
-            muestra.forEach(function(p) {
-                var color = p.tipo === 'Egreso' ? '#dc2626' : '#16a34a';
-                html += '<tr><td>' + p.fecha + '</td><td style="color:' + color + ';font-weight:bold">' + p.tipo + '</td><td>' + p.folio + '</td><td>' + p.subtotal + '</td><td>' + p.iva + '</td><td>' + p.total + '</td></tr>';
+            polizasGeneradas.push({
+                fecha: fechaStr, tipo: tipoCFDI, folio: folio,
+                emisor: emisor, rfc: rfc, uuid: uuid,
+                total: total, subtotal: subtotal.toFixed(2), iva: iva.toFixed(2),
+                detalles: detalles
             });
-            if (polizas.length > 5) html += '<tr><td colspan="6" style="text-align:center;color:#94a3b8">... y ' + (polizas.length - 5) + ' más</td></tr>';
-            html += '</tbody>';
-            document.getElementById('tabla').innerHTML = html;
-            document.getElementById('preview').classList.add('show');
+        });
+
+        if (polizasGeneradas.length === 0) {
+            mostrarMsg('msgPolizas', 'No se encontraron facturas válidas', 'error'); return;
         }
 
-        function mostrar(msg, tipo) {
-            var el = document.getElementById('msg');
-            el.textContent = msg;
-            el.className = tipo;
-        }
+        // Preview
+        var tbody = document.getElementById('previewBody');
+        tbody.innerHTML = '';
+        polizasGeneradas.forEach(function(p) {
+            var color = p.tipo === 'Egreso' ? '#dc2626' : '#16a34a';
+            tbody.innerHTML += '<tr><td>' + p.fecha + '</td>' +
+                '<td><span style="color:' + color + ';font-weight:700">' + p.tipo + '</span></td>' +
+                '<td>' + p.folio + '</td>' +
+                '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + p.emisor + '">' + p.emisor + '</td>' +
+                '<td class="text-right">$' + parseFloat(p.subtotal).toLocaleString('es-MX',{minimumFractionDigits:2}) + '</td>' +
+                '<td class="text-right">$' + parseFloat(p.iva).toLocaleString('es-MX',{minimumFractionDigits:2}) + '</td>' +
+                '<td class="text-right">$' + parseFloat(p.total).toLocaleString('es-MX',{minimumFractionDigits:2}) + '</td>' +
+                '<td style="font-size:10px;color:#64748b">' + (p.uuid ? p.uuid.substring(0,8) + '...' : '-') + '</td></tr>';
+        });
+        document.getElementById('previewPolizas').style.display = 'block';
 
-    })(); // fin IIFE
-    </script>
+        // Guardar en Supabase
+        mostrarMsg('msgPolizas', '⏳ Guardando ' + polizasGeneradas.length + ' pólizas en Supabase...', 'info');
+        var res = await guardarPolizas(polizasGeneradas);
+        var ok = res.filter(function(r){ return r.ok; }).length;
+        var eg = polizasGeneradas.filter(function(p){ return p.tipo === 'Egreso'; }).length;
+        var ig = polizasGeneradas.filter(function(p){ return p.tipo === 'Ingreso'; }).length;
+
+        mostrarMsg('msgPolizas', '✓ ' + ok + '/' + polizasGeneradas.length + ' pólizas creadas (' + eg + ' Egresos + ' + ig + ' Ingresos)', 'success');
+        document.getElementById('btnTxt').style.display = 'inline-flex';
+
+    } catch(err) {
+        console.error(err);
+        mostrarMsg('msgPolizas', '❌ ' + err.message, 'error');
+    }
+}
+window.procesarExcel = procesarExcel;
+
+async function guardarPolizas(polizas) {
+    var res = [];
+    for (var i = 0; i < polizas.length; i++) {
+        var p = polizas[i];
+        try {
+            var ins = await sb.from('amir_polizas').insert({
+                fecha: p.fecha, tipo_poliza: p.tipo,
+                concepto: p.tipo.toUpperCase() + ' - ' + p.folio + ' - ' + p.emisor
+            }).select();
+            if (ins.error) throw ins.error;
+            var pid = ins.data[0].id;
+            for (var j = 0; j < p.detalles.length; j++) {
+                var det = p.detalles[j];
+                var cta = await sb.from('amir_catalogo_cuentas').select('id').eq('codigo', det.cuenta).single();
+                if (cta.error) { console.warn('Cuenta no encontrada:', det.cuenta); continue; }
+                await sb.from('amir_polizas_detalles').insert({
+                    poliza_id: pid, cuenta_id: cta.data.id,
+                    debe: det.tipo_mov === 0 ? det.importe : 0,
+                    haber: det.tipo_mov === 1 ? det.importe : 0
+                });
+            }
+            res.push({ ok: true });
+        } catch(err) { console.error(err); res.push({ ok: false }); }
+    }
+    return res;
+}
+
+// ═══════════════════════════════════════════
+// DESCARGA TXT CONTPAQ
+// ═══════════════════════════════════════════
+function descargarTXT() {
+    if (!polizasGeneradas.length) return;
+    var lines = [];
+    var num = 1;
+    polizasGeneradas.forEach(function(p) {
+        // Fecha sin guiones: YYYYMMDD
+        var fechaTxt = p.fecha.replace(/-/g, '');
+        // Tipo: 1=Ingreso, 2=Egreso, 3=Diario
+        var tipoNum = p.tipo === 'Ingreso' ? '1' : p.tipo === 'Egreso' ? '2' : '3';
+        var concepto = (p.tipo.toUpperCase() + ' ' + p.folio + ' ' + p.emisor).substring(0, 100);
+        // P  YYYYMMDD  tipo  num  subtipo  concepto  ...
+        lines.push(pad('P', 3) + ' ' + fechaTxt + ' ' + pad(tipoNum,6) + ' ' + pad(String(num),6) + ' 1 0          ' + padR(concepto, 100) + ' 11 0 0 ');
+        p.detalles.forEach(function(det) {
+            var cta = det.cuenta.replace(/-/g, ''); // sin guiones para ContPAQ
+            var tipo_mov = det.tipo_mov; // 0=cargo, 1=abono
+            var importe = det.importe.toFixed(2);
+            var ref = padR(String(num), 10);
+            var conc = padR(det.concepto.substring(0, 100), 100);
+            lines.push(pad('M', 3) + ' ' + padR(cta, 30) + ' ' + ref + ' ' + tipo_mov + ' ' + padL(importe, 20) + '              0          0.0                  ' + conc);
+            if (p.uuid) {
+                lines.push('AM ' + p.uuid + ' ');
+            }
+        });
+        if (p.uuid) {
+            lines.push('AD ' + p.uuid + ' ');
+        }
+        num++;
+    });
+    var txt = lines.join('\r\n');
+    var blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var mes = polizasGeneradas[0].fecha.substring(0, 7).replace('-', '');
+    a.href = url; a.download = 'Polizas_Amir_' + mes + '.txt';
+    a.click(); URL.revokeObjectURL(url);
+}
+window.descargarTXT = descargarTXT;
+
+function pad(s, n){ while(s.length < n) s = ' ' + s; return s; }
+function padL(s, n){ s = String(s); while(s.length < n) s = ' ' + s; return s; }
+function padR(s, n){ s = String(s); while(s.length < n) s = s + ' '; return s.substring(0,n); }
+
+// ═══════════════════════════════════════════
+// LIBRO DIARIO
+// ═══════════════════════════════════════════
+async function cargarDiario() {
+    var mes = document.getElementById('filtroMes').value;
+    var anio = document.getElementById('filtroAnio').value;
+    var tipo = document.getElementById('filtroTipo').value;
+    var div = document.getElementById('diarioContent');
+    div.innerHTML = '<div class="empty">⏳ Cargando...</div>';
+
+    try {
+        var q = sb.from('amir_polizas').select('id,fecha,tipo_poliza,concepto,numero').order('fecha').order('id');
+        if (mes && anio) {
+            q = q.gte('fecha', anio + '-' + mes + '-01').lte('fecha', anio + '-' + mes + '-31');
+        } else if (anio) {
+            q = q.gte('fecha', anio + '-01-01').lte('fecha', anio + '-12-31');
+        }
+        if (tipo) q = q.eq('tipo_poliza', tipo);
+
+        var { data: polizas, error } = await q;
+        if (error) throw error;
+        if (!polizas.length) { div.innerHTML = '<div class="empty">Sin pólizas en el período seleccionado</div>'; return; }
+
+        // Cargar detalles de todas
+        var ids = polizas.map(function(p){ return p.id; });
+        var { data: detalles } = await sb.from('amir_polizas_detalles')
+            .select('poliza_id,debe,haber,cuenta_id,amir_catalogo_cuentas(codigo,nombre)')
+            .in('poliza_id', ids);
+
+        var detMap = {};
+        (detalles || []).forEach(function(d){
+            if (!detMap[d.poliza_id]) detMap[d.poliza_id] = [];
+            detMap[d.poliza_id].push(d);
+        });
+
+        var html = '';
+        var totDebe = 0, totHaber = 0;
+
+        polizas.forEach(function(p, idx) {
+            var dets = detMap[p.id] || [];
+            var debe = dets.reduce(function(s,d){ return s + parseFloat(d.debe||0); }, 0);
+            var haber = dets.reduce(function(s,d){ return s + parseFloat(d.haber||0); }, 0);
+            totDebe += debe; totHaber += haber;
+            var cuadre = Math.abs(debe - haber) < 0.02;
+            var badgeClass = p.tipo_poliza === 'Egreso' ? 'badge-egreso' : p.tipo_poliza === 'Ingreso' ? 'badge-ingreso' : 'badge-diario';
+
+            html += '<div class="poliza-card">';
+            html += '<div class="poliza-header">';
+            html += '<div>';
+            html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">';
+            html += '<span class="badge ' + badgeClass + '">' + p.tipo_poliza + '</span>';
+            html += '<span style="font-weight:700;color:#f1f5f9">' + (p.concepto || '') + '</span>';
+            html += '</div>';
+            html += '<div class="poliza-meta">';
+            html += '<span>📅 <strong>' + p.fecha + '</strong></span>';
+            html += '<span>No. <strong>' + (idx+1) + '</strong></span>';
+            html += '</div></div></div>';
+
+            // Tabla movimientos estilo ContPAQ
+            html += '<table style="margin-top:8px"><thead><tr>';
+            html += '<th style="width:30px">No.</th><th>Cuenta</th><th>Nombre</th>';
+            html += '<th class="text-right">Cargo</th><th class="text-right">Abono</th>';
+            html += '</tr></thead><tbody>';
+            dets.forEach(function(d, i){
+                var cta = d.amir_catalogo_cuentas || {};
+                html += '<tr>';
+                html += '<td>' + (i+1) + '</td>';
+                html += '<td class="text-blue">' + (cta.codigo || '-') + '</td>';
+                html += '<td>' + (cta.nombre || '-') + '</td>';
+                html += '<td class="text-right">' + (parseFloat(d.debe||0) > 0 ? '$' + parseFloat(d.debe).toLocaleString('es-MX',{minimumFractionDigits:2}) : '') + '</td>';
+                html += '<td class="text-right">' + (parseFloat(d.haber||0) > 0 ? '$' + parseFloat(d.haber).toLocaleString('es-MX',{minimumFractionDigits:2}) : '') + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            html += '<div class="sumas">Sumas Iguales: ';
+            html += '<strong>$' + debe.toLocaleString('es-MX',{minimumFractionDigits:2}) + '</strong> / ';
+            html += '<strong>$' + haber.toLocaleString('es-MX',{minimumFractionDigits:2}) + '</strong> ';
+            html += cuadre ? '<span class="cuadre">✓ Cuadra</span>' : '<span class="descuadre">✗ Descuadre</span>';
+            html += '</div></div>';
+        });
+
+        // Totales
+        html += '<div class="card" style="text-align:right">';
+        html += '<strong>Total Cargos: $' + totDebe.toLocaleString('es-MX',{minimumFractionDigits:2}) + '</strong> &nbsp;|&nbsp; ';
+        html += '<strong>Total Abonos: $' + totHaber.toLocaleString('es-MX',{minimumFractionDigits:2}) + '</strong> &nbsp;|&nbsp; ';
+        html += '<strong>' + polizas.length + ' pólizas</strong>';
+        html += '</div>';
+
+        div.innerHTML = html;
+    } catch(err) {
+        console.error(err);
+        div.innerHTML = '<div class="empty">❌ ' + err.message + '</div>';
+    }
+}
+window.cargarDiario = cargarDiario;
+
+// ═══════════════════════════════════════════
+// CATÁLOGO DE CUENTAS
+// ═══════════════════════════════════════════
+async function cargarCatalogo() {
+    var tbody = document.getElementById('catalogoBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">⏳ Cargando...</td></tr>';
+    try {
+        var { data, error } = await sb.from('amir_catalogo_cuentas')
+            .select('id,codigo,nombre,tipo,nivel,agrupador_sat')
+            .order('codigo');
+        if (error) throw error;
+        catalogoCache = data || [];
+        renderCatalogo(catalogoCache);
+    } catch(err) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">❌ ' + err.message + '</td></tr>';
+    }
+}
+window.cargarCatalogo = cargarCatalogo;
+
+function renderCatalogo(data) {
+    var tbody = document.getElementById('catalogoBody');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Sin resultados</td></tr>'; return; }
+    tbody.innerHTML = data.map(function(c) {
+        var indent = (c.nivel || 1) > 1 ? 'padding-left:' + ((c.nivel-1)*14) + 'px' : '';
+        return '<tr>' +
+            '<td class="text-blue" style="font-weight:600">' + c.codigo + '</td>' +
+            '<td style="' + indent + '">' + c.nombre + '</td>' +
+            '<td style="font-size:11px;color:#94a3b8">' + (c.tipo||'').split(' ').slice(1).join(' ') + '</td>' +
+            '<td style="text-align:center">' + (c.nivel||'-') + '</td>' +
+            '<td style="text-align:center;color:#64748b">' + (c.agrupador_sat||'-') + '</td>' +
+            '<td><div class="actions">' +
+            '<button class="btn btn-sm" style="background:#334155;color:#e2e8f0" onclick="abrirModalCuenta(' + JSON.stringify(c).replace(/"/g,'&quot;') + ')">✏️</button>' +
+            '</div></td></tr>';
+    }).join('');
+}
+
+function filtrarCatalogo() {
+    var busq = document.getElementById('buscarCuenta').value.toLowerCase();
+    var tipo = document.getElementById('filtroTipoCuenta').value;
+    var res = catalogoCache.filter(function(c) {
+        var matchBusq = !busq || c.codigo.toLowerCase().includes(busq) || c.nombre.toLowerCase().includes(busq);
+        var matchTipo = !tipo || c.tipo.startsWith(tipo);
+        return matchBusq && matchTipo;
+    });
+    renderCatalogo(res);
+}
+window.filtrarCatalogo = filtrarCatalogo;
+
+function abrirModalCuenta(cuenta) {
+    document.getElementById('cuentaId').value = '';
+    document.getElementById('cuentaCodigo').value = '';
+    document.getElementById('cuentaNombre').value = '';
+    document.getElementById('cuentaTipo').value = 'A Activo Deudora';
+    document.getElementById('cuentaNivel').value = '4';
+    document.getElementById('cuentaSAT').value = '';
+    document.getElementById('btnEliminar').style.display = 'none';
+
+    if (cuenta) {
+        document.getElementById('modalTitulo').textContent = 'Editar Cuenta';
+        document.getElementById('cuentaId').value = cuenta.id;
+        document.getElementById('cuentaCodigo').value = cuenta.codigo;
+        document.getElementById('cuentaNombre').value = cuenta.nombre;
+        document.getElementById('cuentaTipo').value = cuenta.tipo;
+        document.getElementById('cuentaNivel').value = cuenta.nivel || 4;
+        document.getElementById('cuentaSAT').value = cuenta.agrupador_sat || '';
+        document.getElementById('btnEliminar').style.display = 'inline-flex';
+    } else {
+        document.getElementById('modalTitulo').textContent = 'Nueva Cuenta';
+    }
+    document.getElementById('modalCuenta').classList.add('show');
+}
+window.abrirModalCuenta = abrirModalCuenta;
+
+function cerrarModal() {
+    document.getElementById('modalCuenta').classList.remove('show');
+}
+window.cerrarModal = cerrarModal;
+
+async function guardarCuenta() {
+    var id     = document.getElementById('cuentaId').value;
+    var codigo = document.getElementById('cuentaCodigo').value.trim();
+    var nombre = document.getElementById('cuentaNombre').value.trim();
+    var tipo   = document.getElementById('cuentaTipo').value;
+    var nivel  = parseInt(document.getElementById('cuentaNivel').value);
+    var sat    = document.getElementById('cuentaSAT').value;
+
+    if (!codigo || !nombre) { alert('Código y Nombre son obligatorios'); return; }
+
+    var payload = { codigo: codigo, nombre: nombre, tipo: tipo, nivel: nivel, agrupador_sat: sat ? parseFloat(sat) : null };
+
+    try {
+        var res;
+        if (id) {
+            res = await sb.from('amir_catalogo_cuentas').update(payload).eq('id', id);
+        } else {
+            res = await sb.from('amir_catalogo_cuentas').insert(payload);
+        }
+        if (res.error) throw res.error;
+        cerrarModal();
+        cargarCatalogo();
+        mostrarMsg('msgCatalogo', '✓ Cuenta guardada', 'success');
+    } catch(err) {
+        alert('Error: ' + err.message);
+    }
+}
+window.guardarCuenta = guardarCuenta;
+
+async function eliminarCuenta() {
+    var id = document.getElementById('cuentaId').value;
+    var codigo = document.getElementById('cuentaCodigo').value;
+    if (!confirm('¿Eliminar cuenta ' + codigo + '? Esta acción no se puede deshacer.')) return;
+    try {
+        var res = await sb.from('amir_catalogo_cuentas').delete().eq('id', id);
+        if (res.error) throw res.error;
+        cerrarModal();
+        cargarCatalogo();
+        mostrarMsg('msgCatalogo', '✓ Cuenta eliminada', 'success');
+    } catch(err) { alert('Error: ' + err.message); }
+}
+window.eliminarCuenta = eliminarCuenta;
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function mostrarMsg(id, txt, tipo) {
+    var el = document.getElementById(id);
+    el.textContent = txt; el.className = 'msg show ' + tipo;
+}
+
+})();
+</script>
 </body>
 </html>
