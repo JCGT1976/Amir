@@ -99,7 +99,7 @@
     <script>
         const supabaseUrl = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
         const supabaseKey = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        let supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         const btnProcesar = document.getElementById('btnProcesar');
         const fileInput = document.getElementById('excelFile');
