@@ -2,28 +2,73 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIF-Amir | Persona Física</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            padding: 20px; 
+        }
         .container { max-width: 1200px; margin: 0 auto; }
         h1 { margin-bottom: 20px; color: #f1f5f9; }
-        .card { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-        label { display: block; margin-top: 12px; margin-bottom: 4px; font-weight: 600; color: #cbd5e1; }
-        input[type="file"], button { padding: 10px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; margin-top: 8px; }
-        input[type="file"] { background: #334155; color: #e2e8f0; width: 100%; }
-        button { background: #3b82f6; color: white; font-weight: 600; }
+        .card { 
+            background: #1e293b; 
+            border: 1px solid #334155; 
+            border-radius: 8px; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+        }
+        h2 { margin-bottom: 12px; color: #cbd5e1; }
+        p { margin-bottom: 12px; color: #94a3b8; font-size: 14px; }
+        label { display: block; margin-top: 12px; margin-bottom: 6px; font-weight: 600; }
+        input[type="file"] { 
+            padding: 8px; 
+            background: #334155; 
+            color: #e2e8f0; 
+            width: 100%; 
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button { 
+            padding: 10px 20px; 
+            margin-top: 12px;
+            background: #3b82f6; 
+            color: white; 
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
         button:hover { background: #2563eb; }
-        .success { background: #dcfce7; color: #166534; padding: 12px; border-radius: 6px; margin-top: 12px; }
-        .error { background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 6px; margin-top: 12px; }
-        .loading { background: #dbeafe; color: #1e40af; padding: 12px; border-radius: 6px; margin-top: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #334155; }
+        button:active { background: #1d4ed8; }
+        #msg { 
+            margin-top: 16px; 
+            padding: 12px; 
+            border-radius: 6px; 
+            display: none;
+        }
+        .success { background: #dcfce7; color: #166534; display: block !important; }
+        .error { background: #fee2e2; color: #991b1b; display: block !important; }
+        .info { background: #dbeafe; color: #1e40af; display: block !important; }
+        table { 
+            width: 100%; 
+            margin-top: 16px;
+            border-collapse: collapse; 
+            font-size: 12px;
+        }
+        th, td { 
+            padding: 8px; 
+            text-align: left; 
+            border-bottom: 1px solid #334155; 
+        }
         th { background: #334155; font-weight: 600; }
-        .hidden { display: none; }
+        #preview { display: none; margin-top: 20px; }
+        #preview.show { display: block; }
         .version { text-align: center; color: #64748b; font-size: 12px; margin-top: 40px; }
     </style>
 </head>
@@ -33,202 +78,193 @@
         
         <div class="card">
             <h2>📤 Cargar Facturas → Generar Pólizas</h2>
-            <p style="color: #94a3b8; margin: 12px 0; font-size: 14px;">Carga archivo Excel de facturas recibidas. Se generarán pólizas automáticas según NIF México 2026.</p>
+            <p>Carga archivo Excel. Genera pólizas automáticas (NIF México 2026).</p>
             
-            <label>Seleccionar archivo Excel:</label>
+            <label>Archivo Excel:</label>
             <input type="file" id="excelFile" accept=".xlsx,.xls">
             
-            <button onclick="procesarExcel()">▶ Procesar y Generar Pólizas</button>
+            <button id="btnProcesar">Procesar Excel</button>
             
-            <div id="status"></div>
-            <div id="preview" class="hidden" style="margin-top: 20px;">
-                <h3 style="margin-bottom: 12px;">✓ Pólizas generadas:</h3>
-                <div id="previewContent"></div>
+            <div id="msg"></div>
+            
+            <div id="preview">
+                <h3>Pólizas generadas:</h3>
+                <table id="tabla"></table>
             </div>
         </div>
     </div>
 
-    <div class="version">v2026.08.13.7</div>
+    <div class="version">v2026.08.13.8</div>
 
     <script>
         const supabaseUrl = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
         const supabaseKey = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
-        const { createClient } = window.supabase;
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        const btnProcesar = document.getElementById('btnProcesar');
+        const fileInput = document.getElementById('excelFile');
+        const msgDiv = document.getElementById('msg');
+        const previewDiv = document.getElementById('preview');
+        const tabla = document.getElementById('tabla');
+
+        btnProcesar.addEventListener('click', procesarExcel);
 
         async function procesarExcel() {
-            const file = document.getElementById('excelFile').files[0];
+            const file = fileInput.files[0];
             if (!file) {
-                mostrarError('❌ Selecciona un archivo Excel');
+                mostrarMensaje('❌ Selecciona un archivo', 'error');
                 return;
             }
 
-            mostrarCargando('Leyendo Excel...');
+            mostrarMensaje('⏳ Leyendo Excel...', 'info');
 
             try {
+                // Leer archivo
                 const arrayBuffer = await file.arrayBuffer();
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 const ws = workbook.Sheets[workbook.SheetNames[0]];
                 const datos = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-                console.log('Total filas:', datos.length);
+                mostrarMensaje('⏳ Generando pólizas...', 'info');
 
                 const polizas = [];
-                const skipRows = [];
-                
-                datos.forEach((row, idx) => {
-                    // SALTAR FILAS VACÍAS
-                    if (!row['▼ Fecha Comprobante'] || !row['Total']) {
-                        skipRows.push(idx + 2);
-                        return;
-                    }
 
+                // Procesar cada fila
+                datos.forEach((row, idx) => {
                     const fecha = row['▼ Fecha Comprobante'];
                     const total = parseFloat(row['Total']) || 0;
+                    const folio = row['Folio'] || `SN-${idx}`;
                     const emisor = row['Nombre Emisor'] || 'Sin emisor';
-                    const folio = row['Folio'] || 'Sin folio';
-                    const tipoCFDI = row['Tipo Comprobante Desc'] || 'Egreso'; // Egreso o Ingreso
+                    const tipoCFDI = row['Tipo Comprobante Desc'] || '';
 
-                    // Convertir fecha
+                    // Saltar filas vacías
+                    if (!fecha || total <= 0) return;
+
+                    // Parsear fecha
                     let fechaStr = fecha;
                     if (typeof fecha === 'number') {
                         const d = new Date((fecha - 25569) * 86400 * 1000);
                         fechaStr = d.toISOString().split('T')[0];
-                    } else if (typeof fecha === 'string') {
-                        const parts = fecha.split('/');
-                        if (parts.length === 3) {
-                            fechaStr = `2026-${parts[1]}-${parts[0]}`;
-                        }
+                    } else if (typeof fecha === 'string' && fecha.includes('/')) {
+                        const [d, m, y] = fecha.split('/');
+                        fechaStr = `${y}-${m}-${d}`;
                     }
 
-                    // Calcular subtotal e IVA
+                    // Calcular IVA
                     const subtotal = total / 1.16;
                     const iva = total - subtotal;
 
-                    // GENERAR PÓLIZA SEGÚN TIPO
-                    let poliza;
-                    
+                    // Generar póliza
+                    let poliza = {
+                        fecha: fechaStr,
+                        tipo: tipoCFDI,
+                        folio: folio,
+                        emisor: emisor,
+                        total: total,
+                        subtotal: subtotal.toFixed(2),
+                        iva: iva.toFixed(2),
+                        detalles: []
+                    };
+
                     if (tipoCFDI === 'Egreso') {
-                        // COMPRA: Débito Costo, Crédito Proveedores + IVA Acreditable
-                        poliza = {
-                            fecha: fechaStr,
-                            tipo_poliza: 'Egreso',
-                            concepto: `COMPRA - ${folio} - ${emisor}`,
-                            detalles: [
-                                { cuenta: '501-01-000', debe: subtotal, haber: 0 },
-                                { cuenta: '201-01-000', debe: 0, haber: total }
-                            ]
-                        };
+                        // COMPRA
+                        poliza.detalles = [
+                            { cuenta: '501-01-000', debe: subtotal, haber: 0 },
+                            { cuenta: '201-01-000', debe: 0, haber: total }
+                        ];
                         if (iva > 0.01) {
-                            poliza.detalles.push({
-                                cuenta: '118-01-000',
-                                debe: iva,
-                                haber: 0
-                            });
+                            poliza.detalles.push({ cuenta: '118-01-000', debe: iva, haber: 0 });
+                        }
+                    } else if (tipoCFDI === 'Ingreso') {
+                        // VENTA
+                        poliza.detalles = [
+                            { cuenta: '102-01-000', debe: total, haber: 0 },
+                            { cuenta: '401-01-000', debe: 0, haber: subtotal }
+                        ];
+                        if (iva > 0.01) {
+                            poliza.detalles.push({ cuenta: '207-01-000', debe: 0, haber: iva });
                         }
                     } else {
-                        // VENTA: Débito Bancos, Crédito Ingresos + IVA Trasladado
-                        poliza = {
-                            fecha: fechaStr,
-                            tipo_poliza: 'Ingreso',
-                            concepto: `VENTA - ${folio} - ${emisor}`,
-                            detalles: [
-                                { cuenta: '102-01-000', debe: total, haber: 0 },
-                                { cuenta: '401-01-000', debe: 0, haber: subtotal }
-                            ]
-                        };
-                        if (iva > 0.01) {
-                            poliza.detalles.push({
-                                cuenta: '207-01-000',
-                                debe: 0,
-                                haber: iva
-                            });
-                        }
+                        return; // Ignorar si no tiene tipo
                     }
 
                     polizas.push(poliza);
                 });
 
-                console.log(`Pólizas generadas: ${polizas.length}, Filas vacías saltadas: ${skipRows.length}`);
-
                 if (polizas.length === 0) {
-                    mostrarError('❌ No se encontraron facturas válidas en el Excel');
+                    mostrarMensaje('❌ No se encontraron facturas válidas', 'error');
                     return;
                 }
 
+                // Mostrar preview
                 mostrarPreview(polizas);
-                
-                mostrarCargando(`Guardando ${polizas.length} pólizas en Supabase...`);
+
+                // Guardar en Supabase
+                mostrarMensaje(`⏳ Guardando ${polizas.length} pólizas en Supabase...`, 'info');
                 const resultados = await guardarPolizas(polizas);
-                
+
                 const exitosas = resultados.filter(r => r.ok).length;
-                const egresos = polizas.filter(p => p.tipo_poliza === 'Egreso').length;
-                const ingresos = polizas.filter(p => p.tipo_poliza === 'Ingreso').length;
-                
-                mostrarExito(`✓ ${exitosas}/${polizas.length} pólizas creadas (${egresos} Egresos + ${ingresos} Ingresos)`);
+                const egresos = polizas.filter(p => p.tipo === 'Egreso').length;
+                const ingresos = polizas.filter(p => p.tipo === 'Ingreso').length;
+
+                mostrarMensaje(
+                    `✓ ${exitosas}/${polizas.length} pólizas creadas (${egresos} Egresos + ${ingresos} Ingresos)`,
+                    'success'
+                );
 
             } catch (err) {
-                console.error('Error:', err);
-                mostrarError(`❌ Error: ${err.message}`);
+                console.error(err);
+                mostrarMensaje(`❌ ${err.message}`, 'error');
             }
         }
 
         async function guardarPolizas(polizas) {
             const resultados = [];
 
-            for (const poliza of polizas) {
+            for (const p of polizas) {
                 try {
-                    // 1. Insertar póliza
-                    const { data: polizaData, error: polizaError } = await supabase
+                    // Insertar póliza
+                    const { data: polizaData, error: polizaErr } = await supabase
                         .from('amir_polizas')
-                        .insert([{
-                            fecha: poliza.fecha,
-                            tipo_poliza: poliza.tipo_poliza,
-                            concepto: poliza.concepto
-                        }])
+                        .insert({
+                            fecha: p.fecha,
+                            tipo_poliza: p.tipo,
+                            concepto: `${p.tipo} - ${p.folio} - ${p.emisor}`
+                        })
                         .select();
 
-                    if (polizaError) {
-                        throw new Error(`Póliza: ${polizaError.message}`);
-                    }
+                    if (polizaErr) throw polizaErr;
 
                     const polizaId = polizaData[0].id;
-                    console.log(`Póliza creada: ${polizaId}`);
 
-                    // 2. Insertar detalles
-                    for (const detalle of poliza.detalles) {
-                        // Buscar cuenta
-                        const { data: cuentaData, error: cuentaError } = await supabase
+                    // Insertar detalles
+                    for (const det of p.detalles) {
+                        const { data: cta, error: ctaErr } = await supabase
                             .from('amir_catalogo_cuentas')
                             .select('id')
-                            .eq('codigo', detalle.cuenta)
+                            .eq('codigo', det.cuenta)
                             .single();
 
-                        if (cuentaError) {
-                            console.warn(`Cuenta ${detalle.cuenta} no encontrada`);
+                        if (ctaErr) {
+                            console.warn(`Cuenta ${det.cuenta} no encontrada`);
                             continue;
                         }
 
-                        // Insertar detalle
-                        const { error: detalleError } = await supabase
+                        await supabase
                             .from('amir_polizas_detalles')
-                            .insert([{
+                            .insert({
                                 poliza_id: polizaId,
-                                cuenta_id: cuentaData.id,
-                                debe: detalle.debe,
-                                haber: detalle.haber
-                            }]);
-
-                        if (detalleError) {
-                            throw new Error(`Detalle: ${detalleError.message}`);
-                        }
+                                cuenta_id: cta.id,
+                                debe: det.debe,
+                                haber: det.haber
+                            });
                     }
 
                     resultados.push({ ok: true });
 
                 } catch (err) {
-                    console.error(`Error guardando póliza:`, err);
-                    resultados.push({ ok: false, error: err.message });
+                    console.error(err);
+                    resultados.push({ ok: false });
                 }
             }
 
@@ -236,26 +272,32 @@
         }
 
         function mostrarPreview(polizas) {
-            let html = '<table><thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Renglones</th></tr></thead><tbody>';
-            polizas.forEach(p => {
-                html += `<tr><td>${p.fecha}</td><td style="color:${p.tipo_poliza === 'Egreso' ? '#dc2626' : '#16a34a'}">${p.tipo_poliza}</td><td>${p.concepto.substring(0, 40)}...</td><td>${p.detalles.length}</td></tr>`;
+            let html = '<thead><tr><th>Fecha</th><th>Tipo</th><th>Folio</th><th>Subtotal</th><th>IVA</th><th>Total</th></tr></thead><tbody>';
+
+            polizas.slice(0, 5).forEach(p => {
+                const color = p.tipo === 'Egreso' ? '#dc2626' : '#16a34a';
+                html += `<tr style="border-bottom:1px solid #334155">
+                    <td>${p.fecha}</td>
+                    <td><span style="color:${color}; font-weight:bold">${p.tipo}</span></td>
+                    <td>${p.folio}</td>
+                    <td>${p.subtotal}</td>
+                    <td>${p.iva}</td>
+                    <td>${p.total}</td>
+                </tr>`;
             });
-            html += '</tbody></table>';
-            
-            document.getElementById('previewContent').innerHTML = html;
-            document.getElementById('preview').classList.remove('hidden');
+
+            if (polizas.length > 5) {
+                html += `<tr><td colspan="6" style="text-align:center; color:#94a3b8">... y ${polizas.length - 5} más</td></tr>`;
+            }
+
+            html += '</tbody>';
+            tabla.innerHTML = html;
+            previewDiv.classList.add('show');
         }
 
-        function mostrarCargando(msg) {
-            document.getElementById('status').innerHTML = `<div class="loading">${msg}</div>`;
-        }
-
-        function mostrarExito(msg) {
-            document.getElementById('status').innerHTML = `<div class="success">${msg}</div>`;
-        }
-
-        function mostrarError(msg) {
-            document.getElementById('status').innerHTML = `<div class="error">${msg}</div>`;
+        function mostrarMensaje(msg, tipo) {
+            msgDiv.textContent = msg;
+            msgDiv.className = tipo;
         }
     </script>
 </body>
