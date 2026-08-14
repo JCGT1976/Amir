@@ -3,104 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIF-Amir | Persona Física | Fase 3</title>
+    <title>SIF-Amir | Reportes Contables | Fase 3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;font-size:13px}
+        
+        body{
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+            background:#0f172a;
+            color:#1e293b;
+            font-size:12px
+        }
+        
+        /* PALETA */
+        :root{
+            --azul-marino:#003D7A;
+            --azul-ejecutivo:#1E40AF;
+            --azul-claro:#E8F1FF;
+            --blanco:#FFFFFF;
+            --gris-tenue:#F8FAFC;
+            --gris-borde:#E2E8F0;
+            --gris-oscuro:#1E293B;
+            --gris-medio:#475569;
+            --gris-datos:#334155;
+            --rojo-negativo:#DC2626;
+            --gris-etiqueta:#64748B;
+            --gris-subtotal:#CBD5E1;
+        }
         
         /* NAV */
-        .nav{display:flex;gap:4px;background:#1e293b;border-bottom:1px solid #334155;padding:8px 16px;overflow-x:auto;flex-wrap:wrap}
-        .nav-btn{padding:7px 16px;border:none;border-radius:5px;cursor:pointer;font-size:13px;font-weight:600;background:transparent;color:#94a3b8;transition:all .15s;white-space:nowrap}
-        .nav-btn:hover{background:#334155;color:#e2e8f0}
-        .nav-btn.active{background:#3b82f6;color:#fff}
+        .nav{
+            display:flex;
+            gap:4px;
+            background:var(--azul-marino);
+            border-bottom:1px solid var(--gris-borde);
+            padding:8px 16px;
+            overflow-x:auto;
+            flex-wrap:wrap
+        }
+        
+        .nav-btn{
+            padding:10px 18px;
+            border:none;
+            border-radius:0;
+            cursor:pointer;
+            font-size:13px;
+            font-weight:600;
+            background:transparent;
+            color:#e2e8f0;
+            transition:all .15s;
+            white-space:nowrap;
+            border-bottom:3px solid transparent
+        }
+        
+        .nav-btn:hover{background:rgba(255,255,255,.1)}
+        .nav-btn.active{border-bottom-color:#fff;background:rgba(255,255,255,.05)}
         
         /* VIEWS */
-        .view{display:none;padding:20px}
+        .view{display:none;padding:20px;background:#fff}
         .view.active{display:block}
         
         /* HEADER */
-        h1{padding:16px 20px 0;font-size:18px;color:#f1f5f9}
-        .subtitle{padding:4px 20px 12px;color:#64748b;font-size:12px}
-        
-        /* CARD */
-        .card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:18px;margin-bottom:16px}
+        h1{color:var(--azul-marino);font-size:24px;font-weight:600;padding:20px 20px 0;margin:0}
+        .subtitle{color:var(--gris-medio);font-size:12px;padding:4px 20px 16px;margin:0}
         
         /* REPORT HEADER */
-        .report-header{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:20px;margin-bottom:20px;text-align:center}
-        .report-header h2{color:#e2e8f0;margin-bottom:4px;font-size:16px}
-        .report-header p{color:#94a3b8;font-size:11px;margin:2px 0}
+        .report-header{
+            background:linear-gradient(135deg, var(--azul-marino) 0%, #001f4d 100%);
+            color:#fff;
+            padding:24px;
+            border-radius:0;
+            margin-bottom:24px;
+            text-align:center
+        }
         
-        /* TABLES */
-        table{width:100%;border-collapse:collapse;font-size:12px}
-        table.report{margin-bottom:20px}
-        th{background:#334155;padding:10px;text-align:left;font-weight:600;color:#cbd5e1;font-size:11px;position:sticky;top:0}
-        td{padding:8px 10px;border-bottom:1px solid #1e293b}
-        tr:hover td{background:#1e293b}
-        .tbl-wrap{border:1px solid #334155;border-radius:6px;overflow:hidden;margin-bottom:16px}
+        .report-header h2{
+            font-size:18px;
+            font-weight:600;
+            margin:0 0 8px;
+            color:#fff
+        }
         
-        /* NUMERIC */
-        .text-right{text-align:right}
-        .num-val{font-family:'Courier New',monospace;color:#cbd5e1}
-        .subtotal-row td{background:#334155;font-weight:600;color:#cbd5e1}
-        .total-row td{background:#1e40af;font-weight:700;color:#fff}
-        
-        /* BALANCE LAYOUT */
-        .balance-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
-        .balance-side{border:1px solid #334155;border-radius:8px;padding:16px;background:#1e293b}
-        .balance-side h3{color:#e2e8f0;margin-bottom:12px;font-size:13px;border-bottom:2px solid #334155;padding-bottom:8px}
-        .balance-item{display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1;font-size:12px}
-        .balance-item-main{font-weight:600;color:#e2e8f0;padding:8px 0;border-top:1px solid #334155;margin-top:8px}
-        .balance-item.child{padding-left:16px;color:#94a3b8}
-        .balance-amount{font-family:'Courier New',monospace;text-align:right}
-        
-        /* ESTADO RESULTADOS */
-        .er-section{margin-bottom:20px;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px}
-        .er-section-title{font-weight:700;color:#e2e8f0;padding-bottom:8px;border-bottom:1px solid #334155;margin-bottom:10px;font-size:12px}
-        .er-line{display:flex;justify-content:space-between;padding:6px 0;font-size:12px}
-        .er-line-label{color:#cbd5e1}
-        .er-line-value{font-family:'Courier New',monospace;color:#cbd5e1;text-align:right}
-        .er-line.total{border-top:1px solid #334155;padding-top:8px;margin-top:8px;font-weight:600;color:#e2e8f0}
-        .er-line.result{background:#334155;padding:8px;border-radius:4px;margin-top:8px;font-weight:700;color:#f1f5f9}
-        
-        /* CUENTA HEADER */
-        .cuenta-header{background:#334155;padding:10px;margin:14px 0 10px 0;border-radius:4px;font-weight:600;color:#cbd5e1;font-size:12px;border-left:3px solid #3b82f6}
+        .report-header p{
+            font-size:11px;
+            margin:0;
+            opacity:.9
+        }
         
         /* CONTROLS */
-        .controls{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-        .btn{padding:8px 14px;border:none;border-radius:5px;cursor:pointer;font-weight:600;font-size:12px;transition:all .15s}
-        .btn-primary{background:#3b82f6;color:#fff}.btn-primary:hover{background:#2563eb}
-        .btn-secondary{background:#475569;color:#e2e8f0}.btn-secondary:hover{background:#64748b}
-        .btn-sm{padding:5px 10px;font-size:11px}
+        .controls{
+            display:flex;
+            gap:12px;
+            margin-bottom:20px;
+            flex-wrap:wrap;
+            align-items:flex-end
+        }
         
-        /* FILTERS */
-        .filter-group{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
-        .filter-group label{margin-bottom:6px;display:block;font-size:11px;color:#94a3b8;font-weight:600}
-        .filter-group input,.filter-group select{padding:6px 10px;background:#334155;border:1px solid #475569;border-radius:4px;color:#e2e8f0;font-size:12px;width:auto}
+        .control-group{flex:1;min-width:160px}
+        .control-group label{display:block;font-size:11px;font-weight:600;color:var(--gris-etiqueta);margin-bottom:6px}
+        .control-group input,.control-group select{
+            width:100%;
+            padding:8px 10px;
+            background:#fff;
+            border:1px solid var(--gris-borde);
+            border-radius:4px;
+            color:var(--gris-datos);
+            font-size:12px;
+            font-family:inherit
+        }
+        
+        .btn{
+            padding:8px 14px;
+            border:1px solid var(--gris-borde);
+            border-radius:4px;
+            cursor:pointer;
+            font-weight:600;
+            font-size:12px;
+            transition:all .15s;
+            background:#fff;
+            color:var(--gris-datos)
+        }
+        
+        .btn:hover{background:var(--gris-tenue);border-color:var(--azul-claro)}
+        .btn-primary{background:var(--azul-marino);color:#fff;border-color:var(--azul-marino)}
+        .btn-primary:hover{background:#001f4d}
+        
+        /* TABLES */
+        table{
+            width:100%;
+            border-collapse:collapse;
+            font-size:12px;
+            background:#fff;
+            border:1px solid var(--gris-borde)
+        }
+        
+        th{
+            background:var(--azul-claro);
+            padding:12px 10px;
+            text-align:left;
+            font-weight:600;
+            color:var(--gris-oscuro);
+            font-size:12px;
+            height:24px;
+            border-bottom:1px solid var(--gris-borde)
+        }
+        
+        td{
+            padding:8px 10px;
+            height:20px;
+            border-bottom:1px solid var(--gris-borde);
+            color:var(--gris-datos)
+        }
+        
+        tr:nth-child(even) td{background:var(--gris-tenue)}
+        tr:nth-child(odd) td{background:#fff}
+        
+        /* NÚMERO */
+        .num{
+            text-align:right;
+            font-family:'Courier New',monospace;
+            color:var(--gris-datos)
+        }
+        
+        .num-negative{color:var(--rojo-negativo);font-weight:600}
+        .num-zero{color:var(--gris-etiqueta)}
+        
+        /* SUBTOTAL */
+        .subtotal-row td{
+            background:#334155;
+            color:var(--gris-subtotal);
+            font-weight:600;
+            border-bottom:1px solid #334155;
+            border-top:1px solid #334155
+        }
+        
+        /* TOTAL */
+        .total-row td{
+            background:var(--azul-ejecutivo);
+            color:#fff;
+            font-weight:700;
+            border-top:2px solid var(--azul-ejecutivo);
+            border-bottom:2px solid var(--azul-ejecutivo);
+            height:22px
+        }
+        
+        /* ACCOUNT HEADER */
+        .cuenta-header{
+            background:var(--azul-marino);
+            color:#fff;
+            padding:10px 12px;
+            font-weight:600;
+            font-size:12px;
+            margin-top:16px;
+            margin-bottom:0;
+            border:1px solid var(--gris-borde);
+            border-bottom:none
+        }
+        
+        /* SECTION */
+        .section{
+            background:var(--gris-tenue);
+            border:1px solid var(--gris-borde);
+            border-radius:0;
+            padding:14px;
+            margin-bottom:16px
+        }
+        
+        .section-title{
+            font-weight:600;
+            color:var(--gris-oscuro);
+            font-size:12px;
+            padding-bottom:8px;
+            border-bottom:1px solid var(--gris-borde);
+            margin-bottom:10px
+        }
+        
+        .section-line{
+            display:flex;
+            justify-content:space-between;
+            padding:6px 0;
+            color:var(--gris-datos)
+        }
+        
+        .section-line-label{flex:1}
+        .section-line-value{
+            text-align:right;
+            font-family:'Courier New',monospace;
+            min-width:120px
+        }
+        
+        /* BALANCE LAYOUT */
+        .balance-container{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+        .balance-side{background:var(--gris-tenue);border:1px solid var(--gris-borde);padding:16px}
+        .balance-side h3{color:var(--azul-marino);margin-bottom:12px;font-size:13px;font-weight:600;border-bottom:2px solid var(--gris-borde);padding-bottom:8px}
+        .balance-item{display:flex;justify-content:space-between;padding:8px 0;color:var(--gris-datos);font-size:12px}
+        .balance-item.child{padding-left:16px;color:var(--gris-medio)}
+        .balance-amount{font-family:'Courier New',monospace;text-align:right;min-width:120px}
+        .balance-total{
+            font-weight:600;
+            color:var(--gris-oscuro);
+            padding:8px 0;
+            margin-top:8px;
+            border-top:1px solid var(--gris-borde);
+            padding-top:12px
+        }
         
         /* PRINT */
         @media print{
-            body{background:#fff;color:#000}
+            body{background:#fff}
             .nav,.controls,.btn{display:none}
             .view{padding:0}
-            .report-header h2{color:#000}
-            h1{padding:0}
-            table{font-size:11px}
-            th{background:#ddd;color:#000}
-            td{color:#000;border-color:#ccc}
+            .report-header{margin-bottom:16px;page-break-after:avoid}
         }
         
-        .empty{text-align:center;color:#475569;padding:40px}
+        .empty{text-align:center;color:var(--gris-etiqueta);padding:40px}
         
         @media(max-width:768px){
             .balance-container{grid-template-columns:1fr}
+            .controls{flex-direction:column}
+            .control-group{width:100%}
         }
     </style>
 </head>
 <body>
 
-<h1>📊 SIF-Amir | Fase 3 <span style="color:#64748b;font-size:13px;font-weight:400">(Reportes Contables)</span></h1>
-<p class="subtitle">Auxiliar · Balanza · Estados Financieros | NIF México 2026</p>
+<h1>📊 SIF-Amir | Reportes Contables</h1>
+<p class="subtitle">Fase 3 | Auxiliar · Balanza · Estado Resultados · Balance General | NIF México 2026</p>
 
 <div class="nav">
     <button class="nav-btn active" onclick="setView('auxiliar')">📕 Auxiliar Libro Mayor</button>
@@ -111,616 +279,558 @@
 
 <!-- AUXILIAR -->
 <div class="view active" id="view-auxiliar">
-    <div class="filter-group">
-        <div>
+    <div class="controls">
+        <div class="control-group">
             <label>Cuenta:</label>
-            <select id="filter-auxiliar-cuenta" onchange="generarAuxiliar()" style="width:300px">
+            <select id="filter-auxiliar-cuenta" onchange="generarAuxiliar()" style="width:100%">
                 <option value="">-- Todas las Cuentas --</option>
             </select>
         </div>
-        <div>
+        <div class="control-group" style="flex:0 0 160px">
             <label>Período:</label>
             <input type="month" id="filter-auxiliar-periodo" value="2026-04" onchange="generarAuxiliar()">
         </div>
-        <button class="btn btn-primary btn-sm" onclick="exportarAuxiliar()">📥 Excel</button>
-        <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn btn-primary" onclick="exportarAuxiliar()">📥 Excel</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
     </div>
     <div id="auxiliar-report"></div>
 </div>
 
 <!-- BALANZA -->
 <div class="view" id="view-balanza">
-    <div class="filter-group">
-        <div>
+    <div class="controls">
+        <div class="control-group" style="flex:0 0 160px">
             <label>Período:</label>
             <input type="month" id="filter-balanza-periodo" value="2026-04" onchange="generarBalanza()">
         </div>
-        <button class="btn btn-primary btn-sm" onclick="exportarBalanza()">📥 Excel</button>
-        <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn btn-primary" onclick="exportarBalanza()">📥 Excel</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
     </div>
     <div id="balanza-report"></div>
 </div>
 
 <!-- ESTADO RESULTADOS -->
 <div class="view" id="view-resultados">
-    <div class="filter-group">
-        <div>
+    <div class="controls">
+        <div class="control-group" style="flex:0 0 160px">
             <label>Período:</label>
             <input type="month" id="filter-resultados-periodo" value="2026-04" onchange="generarResultados()">
         </div>
-        <button class="btn btn-primary btn-sm" onclick="exportarResultados()">📥 Excel</button>
-        <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn btn-primary" onclick="exportarResultados()">📥 Excel</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
     </div>
     <div id="resultados-report"></div>
 </div>
 
 <!-- BALANCE GENERAL -->
 <div class="view" id="view-balance">
-    <div class="filter-group">
-        <div>
+    <div class="controls">
+        <div class="control-group" style="flex:0 0 160px">
             <label>Fecha:</label>
             <input type="date" id="filter-balance-fecha" value="2026-04-30" onchange="generarBalance()">
         </div>
-        <button class="btn btn-primary btn-sm" onclick="exportarBalance()">📥 Excel</button>
-        <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="btn btn-primary" onclick="exportarBalance()">📥 Excel</button>
+        <button class="btn" onclick="window.print()">🖨️ Imprimir</button>
     </div>
     <div id="balance-report"></div>
 </div>
 
 <script>
 (function() {
-    const APP_VERSION = '2026.08.14.2';
+    const APP_VERSION = '2026.08.15.1';
+    const PERSONA = 'Amir Tafreshi';
+    const RFC = 'TAAM810706S72';
+    const DIRECCION = 'Bellas Artes #20181';
+    const COLONIA = 'Ciudad Industrial, Tijuana, B.C.';
     
-    // ==================== DATOS GENERADOS ====================
+    // CATÁLOGO
     const CATALOGO = [
-        // ACTIVOS
         {id:1, codigo:'100-00-000', nombre:'Activo', tipo:'activo', saldo_inicial:0},
-        {id:2, codigo:'100-01-000', nombre:'Activo a Corto Plazo', tipo:'activo', saldo_inicial:0},
         {id:3, codigo:'102-00-000', nombre:'Bancos', tipo:'activo', saldo_inicial:2070268.37},
         {id:4, codigo:'102-01-001', nombre:'Banco Santander', tipo:'activo', saldo_inicial:2050397.79},
         {id:5, codigo:'102-01-002', nombre:'Banco HSBC', tipo:'activo', saldo_inicial:-21239.42},
         {id:6, codigo:'110-00-000', nombre:'Deudores Diversos', tipo:'activo', saldo_inicial:347801.35},
-        {id:7, codigo:'118-00-000', nombre:'Impuestos Acreditables', tipo:'activo', saldo_inicial:15681.45},
-        {id:8, codigo:'118-01-000', nombre:'IVA Acreditable Pagado', tipo:'activo', saldo_inicial:15681.45},
-        {id:9, codigo:'150-00-000', nombre:'Activo Fijo', tipo:'activo', saldo_inicial:6451584},
-        {id:10, codigo:'150-01-000', nombre:'Propiedad, Planta y Equipo', tipo:'activo', saldo_inicial:6451584},
-        
-        // PASIVOS
+        {id:8, codigo:'118-01-000', nombre:'IVA Acreditable', tipo:'activo', saldo_inicial:15681.45},
+        {id:10, codigo:'150-01-000', nombre:'Propiedad y Equipo', tipo:'activo', saldo_inicial:6451584},
         {id:11, codigo:'200-00-000', nombre:'Pasivo', tipo:'pasivo', saldo_inicial:-6456112.46},
-        {id:12, codigo:'200-01-000', nombre:'Pasivo a Corto Plazo', tipo:'pasivo', saldo_inicial:-0.34},
-        {id:13, codigo:'210-00-000', nombre:'Acreedores Diversos CP', tipo:'pasivo', saldo_inicial:-0.34},
-        {id:14, codigo:'200-02-000', nombre:'Pasivo a Largo Plazo', tipo:'pasivo', saldo_inicial:-6456112.12},
-        {id:15, codigo:'252-00-000', nombre:'Cuentas por Pagar LP', tipo:'pasivo', saldo_inicial:-6406112.12},
-        {id:16, codigo:'252-07-001', nombre:'Crédito Hipotecario Santander', tipo:'pasivo', saldo_inicial:-2707350.54},
-        {id:17, codigo:'252-07-002', nombre:'Préstamo a LP Nacional', tipo:'pasivo', saldo_inicial:-3698761.58},
-        
-        // CAPITAL
-        {id:18, codigo:'300-00-000', nombre:'Capital Contable', tipo:'capital', saldo_inicial:0},
+        {id:16, codigo:'252-07-001', nombre:'Crédito Hipotecario', tipo:'pasivo', saldo_inicial:-2707350.54},
+        {id:17, codigo:'252-07-002', nombre:'Préstamo LP', tipo:'pasivo', saldo_inicial:-3698761.58},
         {id:19, codigo:'310-00-000', nombre:'Capital Social', tipo:'capital', saldo_inicial:2493376.06},
-        {id:20, codigo:'320-00-000', nombre:'Utilidades Acumuladas', tipo:'capital', saldo_inicial:0},
-        
-        // INGRESOS
-        {id:21, codigo:'400-00-000', nombre:'Ingresos por Servicios', tipo:'ingreso', saldo_inicial:0},
-        {id:22, codigo:'410-00-000', nombre:'Ingresos por Intereses', tipo:'ingreso', saldo_inicial:0},
-        
-        // COSTOS
-        {id:23, codigo:'500-00-000', nombre:'Costo de Servicios', tipo:'costo', saldo_inicial:0},
-        {id:24, codigo:'510-00-000', nombre:'Devoluciones', tipo:'costo', saldo_inicial:0},
-        
-        // GASTOS
-        {id:25, codigo:'600-00-000', nombre:'Gastos Generales', tipo:'gasto', saldo_inicial:0},
-        {id:26, codigo:'610-00-000', nombre:'Gastos de Operación', tipo:'gasto', saldo_inicial:0},
-        {id:27, codigo:'620-00-000', nombre:'Gastos de Venta', tipo:'gasto', saldo_inicial:0},
-        
-        // RESULTADO FINANCIERO
-        {id:28, codigo:'700-00-000', nombre:'Resultado Integral Financiero', tipo:'financiero', saldo_inicial:0},
-        {id:29, codigo:'701-00-000', nombre:'Gastos Financieros', tipo:'financiero', saldo_inicial:0},
+        {id:21, codigo:'400-00-000', nombre:'Ingresos Servicios', tipo:'ingreso', saldo_inicial:0},
+        {id:26, codigo:'600-00-000', nombre:'Gastos Generales', tipo:'gasto', saldo_inicial:0},
+        {id:27, codigo:'620-00-000', nombre:'Gastos Venta', tipo:'gasto', saldo_inicial:0},
         {id:30, codigo:'701-04-000', nombre:'Intereses Bancarios', tipo:'financiero', saldo_inicial:0},
         {id:31, codigo:'701-10-000', nombre:'Comisiones Bancarias', tipo:'financiero', saldo_inicial:0},
     ];
     
-    // Pólizas y detalles generados
     const POLIZAS = [];
     const POLIZAS_DETALLES = [];
+    
+    function formatNumber(n) {
+        if(n === 0 || n === null || n === undefined) return '-';
+        const sign = n < 0 ? '-' : '';
+        const abs = Math.abs(n);
+        return sign + abs.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    
+    function numberClass(n) {
+        if(n < 0) return 'num-negative';
+        if(n === 0) return 'num-zero';
+        return '';
+    }
     
     function generarMovimientos() {
         POLIZAS.length = 0;
         POLIZAS_DETALLES.length = 0;
         
-        let id_poliza = 1;
-        let id_detalle = 1;
+        let id_pol = 1, id_det = 1;
         
-        // ABRIL 2026
-        const movimientos = [
-            {fecha:'2026-04-01', tipo:'Egresos', numero:'6', desc:'Comisiones bancarias', movs:[
-                {cta:31, tipo_mov:'abono', monto:870}
+        const movs = [
+            {fecha:'2026-04-01', tipo:'Egresos', num:'6', desc:'Comisiones bancarias', detalles:[
+                {cta:31, mov:'abono', mto:870}
             ]},
-            {fecha:'2026-04-06', tipo:'Egresos', numero:'7', desc:'Pago de crédito Santander', movs:[
-                {cta:16, tipo_mov:'abono', monto:33886.07},
-                {cta:4, tipo_mov:'cargo', monto:33886.07}
+            {fecha:'2026-04-06', tipo:'Egresos', num:'7', desc:'Pago crédito hipotecario', detalles:[
+                {cta:16, mov:'abono', mto:33886.07},
+                {cta:4, mov:'cargo', mto:33886.07}
             ]},
-            {fecha:'2026-04-06', tipo:'Diario', numero:'28', desc:'Transferencia interbancaria', movs:[
-                {cta:4, tipo_mov:'abono', monto:41235},
-                {cta:5, tipo_mov:'cargo', monto:41235}
+            {fecha:'2026-04-06', tipo:'Diario', num:'28', desc:'Transferencia interbancaria', detalles:[
+                {cta:4, mov:'abono', mto:41235},
+                {cta:5, mov:'cargo', mto:41235}
             ]},
-            {fecha:'2026-04-10', tipo:'Diario', numero:'29', desc:'Pago de servicios', movs:[
-                {cta:26, tipo_mov:'cargo', monto:15000},
-                {cta:4, tipo_mov:'abono', monto:15000}
+            {fecha:'2026-04-10', tipo:'Diario', num:'29', desc:'Pago servicios', detalles:[
+                {cta:26, mov:'cargo', mto:15000},
+                {cta:4, mov:'abono', mto:15000}
             ]},
-            {fecha:'2026-04-15', tipo:'Diario', numero:'30', desc:'Ingresos por servicios', movs:[
-                {cta:4, tipo_mov:'cargo', monto:25000},
-                {cta:21, tipo_mov:'abono', monto:25000}
+            {fecha:'2026-04-15', tipo:'Diario', num:'30', desc:'Ingresos servicios', detalles:[
+                {cta:4, mov:'cargo', mto:25000},
+                {cta:21, mov:'abono', mto:25000}
             ]},
-            {fecha:'2026-04-20', tipo:'Diario', numero:'31', desc:'IVA pagado', movs:[
-                {cta:8, tipo_mov:'cargo', monto:120},
-                {cta:4, tipo_mov:'abono', monto:120}
+            {fecha:'2026-04-20', tipo:'Diario', num:'31', desc:'IVA pagado', detalles:[
+                {cta:8, mov:'cargo', mto:120},
+                {cta:4, mov:'abono', mto:120}
             ]},
-            {fecha:'2026-04-25', tipo:'Diario', numero:'32', desc:'Intereses generados', movs:[
-                {cta:30, tipo_mov:'cargo', monto:2359.44},
-                {cta:4, tipo_mov:'abono', monto:2359.44}
+            {fecha:'2026-04-25', tipo:'Diario', num:'32', desc:'Intereses', detalles:[
+                {cta:30, mov:'cargo', mto:2359.44},
+                {cta:4, mov:'abono', mto:2359.44}
             ]},
-            {fecha:'2026-04-28', tipo:'Diario', numero:'33', desc:'Gastos diversos', movs:[
-                {cta:27, tipo_mov:'cargo', monto:723.83},
-                {cta:4, tipo_mov:'abono', monto:723.83}
+            {fecha:'2026-04-28', tipo:'Diario', num:'33', desc:'Gastos diversos', detalles:[
+                {cta:27, mov:'cargo', mto:723.83},
+                {cta:4, mov:'abono', mto:723.83}
             ]},
         ];
         
-        movimientos.forEach(mov => {
-            POLIZAS.push({
-                id: id_poliza,
-                fecha: mov.fecha,
-                tipo: mov.tipo,
-                numero: mov.numero,
-                descripcion: mov.desc,
-                referencia: ''
+        movs.forEach(mov => {
+            POLIZAS.push({id: id_pol, fecha: mov.fecha, tipo: mov.tipo, numero: mov.num, descripcion: mov.desc});
+            mov.detalles.forEach(det => {
+                POLIZAS_DETALLES.push({id: id_det, poliza_id: id_pol, cuenta_id: det.cta, tipo_movimiento: det.mov, monto: det.mto, concepto: mov.desc});
+                id_det++;
             });
-            
-            mov.movs.forEach(detalle => {
-                const cuenta = CATALOGO.find(c => c.id === detalle.cta);
-                POLIZAS_DETALLES.push({
-                    id: id_detalle,
-                    poliza_id: id_poliza,
-                    cuenta_id: detalle.cta,
-                    tipo_movimiento: detalle.tipo_mov,
-                    monto: detalle.monto,
-                    concepto: mov.desc
-                });
-                id_detalle++;
-            });
-            
-            id_poliza++;
+            id_pol++;
         });
     }
     
     function llenarFiltros() {
-        const select = document.getElementById('filter-auxiliar-cuenta');
-        CATALOGO
-            .filter(c => c.tipo === 'activo' || c.tipo === 'pasivo')
-            .sort((a, b) => a.codigo.localeCompare(b.codigo))
-            .forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = `${c.codigo} - ${c.nombre}`;
-                select.appendChild(opt);
-            });
+        const sel = document.getElementById('filter-auxiliar-cuenta');
+        CATALOGO.filter(c => c.tipo === 'activo' || c.tipo === 'pasivo').sort((a,b) => a.codigo.localeCompare(b.codigo)).forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.codigo + ' - ' + c.nombre;
+            sel.appendChild(opt);
+        });
     }
     
     function generarAuxiliar() {
-        const container = document.getElementById('auxiliar-report');
-        const cuentaId = parseInt(document.getElementById('filter-auxiliar-cuenta').value) || null;
-        const periodo = document.getElementById('filter-auxiliar-periodo').value;
+        const cont = document.getElementById('auxiliar-report');
+        const cta = parseInt(document.getElementById('filter-auxiliar-cuenta').value) || null;
+        const per = document.getElementById('filter-auxiliar-periodo').value;
         
-        if (!periodo) {
-            container.innerHTML = '<div class="empty">Selecciona un período</div>';
-            return;
-        }
+        if(!per) { cont.innerHTML = '<div class="empty">Selecciona período</div>'; return; }
         
-        const [año, mes] = periodo.split('-');
+        const [año, mes] = per.split('-');
         const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-        const mesNombre = meses[parseInt(mes) - 1];
+        const mesNom = meses[parseInt(mes)-1];
         
-        const filtradas = POLIZAS.filter(p => new Date(p.fecha).toISOString().slice(0, 7) === periodo);
+        const filt = POLIZAS.filter(p => new Date(p.fecha).toISOString().slice(0,7) === per);
         
         let html = `
             <div class="report-header">
                 <h2>📕 AUXILIAR DEL LIBRO MAYOR</h2>
-                <p>CONTPAQ i | Amir Tafreshi (Persona Física)</p>
-                <p>Período: ${mesNombre} 01 - ${parseInt(mes)}/${año} 30</p>
-                <p style="margin-top:8px;font-size:10px">RFC: TAAM810706S72 | Bellas Artes #20181 | Ciudad Industrial, Tijuana, B.C.</p>
+                <p>Período: ${mesNom} 01 - ${parseInt(mes)}/2026 30</p>
+                <p style="font-size:10px;margin-top:8px">${RFC} | ${DIRECCION}</p>
             </div>
         `;
         
-        if (cuentaId) {
-            const cuenta = CATALOGO.find(c => c.id === cuentaId);
+        if(cta) {
+            const cuenta = CATALOGO.find(c => c.id === cta);
             html += `<div class="cuenta-header">${cuenta.codigo} - ${cuenta.nombre}</div>`;
-            html += `<div class="tbl-wrap"><table class="report"><thead><tr>
-                <th>Fecha</th><th>Tipo</th><th>Número</th><th>Concepto</th><th>Ref.</th>
-                <th style="text-align:right">Cargos</th><th style="text-align:right">Abonos</th>
-            </tr></thead><tbody>`;
+            html += `<table>
+                <thead><tr>
+                    <th>Fecha</th><th>Tipo</th><th>Número</th><th>Concepto</th>
+                    <th style="text-align:right">Cargos</th><th style="text-align:right">Abonos</th>
+                </tr></thead><tbody>`;
             
-            let totalCargos = 0, totalAbonos = 0;
-            
-            filtradas.forEach(p => {
-                const detalles = POLIZAS_DETALLES.filter(d => d.poliza_id === p.id && d.cuenta_id === cuentaId);
-                detalles.forEach(d => {
-                    const fecha = new Date(p.fecha).toLocaleDateString('es-MX');
+            let totCargo = 0, totAbono = 0;
+            filt.forEach(p => {
+                const dets = POLIZAS_DETALLES.filter(d => d.poliza_id === p.id && d.cuenta_id === cta);
+                dets.forEach(d => {
                     const cargo = d.tipo_movimiento === 'cargo' ? d.monto : 0;
                     const abono = d.tipo_movimiento === 'abono' ? d.monto : 0;
-                    totalCargos += cargo;
-                    totalAbonos += abono;
+                    totCargo += cargo;
+                    totAbono += abono;
                     
                     html += `<tr>
-                        <td>${fecha}</td><td>${p.tipo}</td><td>${p.numero}</td>
-                        <td>${d.concepto}</td><td>${p.referencia || '-'}</td>
-                        <td class="text-right num-val">${cargo > 0 ? cargo.toFixed(2) : ''}</td>
-                        <td class="text-right num-val">${abono > 0 ? abono.toFixed(2) : ''}</td>
+                        <td>${new Date(p.fecha).toLocaleDateString('es-MX')}</td>
+                        <td>${p.tipo}</td><td>${p.numero}</td><td>${d.concepto}</td>
+                        <td class="num">${cargo > 0 ? formatNumber(cargo) : ''}</td>
+                        <td class="num">${abono > 0 ? formatNumber(abono) : ''}</td>
                     </tr>`;
                 });
             });
             
             html += `<tr class="total-row">
-                <td colspan="5">TOTAL</td>
-                <td class="text-right" style="color:#fff">${totalCargos.toFixed(2)}</td>
-                <td class="text-right" style="color:#fff">${totalAbonos.toFixed(2)}</td>
-            </tr></tbody></table></div>`;
+                <td colspan="4">TOTAL</td>
+                <td class="num">${formatNumber(totCargo)}</td>
+                <td class="num">${formatNumber(totAbono)}</td>
+            </tr></tbody></table>`;
         } else {
-            const cuentasConMov = [...new Set(POLIZAS_DETALLES.filter(d => filtradas.some(p => p.id === d.poliza_id)).map(d => d.cuenta_id))];
-            
-            cuentasConMov.forEach(ctaId => {
+            const ctasConMov = [...new Set(POLIZAS_DETALLES.filter(d => filt.some(p => p.id === d.poliza_id)).map(d => d.cuenta_id))];
+            ctasConMov.forEach(ctaId => {
                 const cuenta = CATALOGO.find(c => c.id === ctaId);
                 html += `<div class="cuenta-header">${cuenta.codigo} - ${cuenta.nombre}</div>`;
-                html += `<div class="tbl-wrap"><table class="report"><thead><tr>
-                    <th>Fecha</th><th>Tipo</th><th>Número</th><th>Concepto</th>
-                    <th style="text-align:right">Cargos</th><th style="text-align:right">Abonos</th>
-                </tr></thead><tbody>`;
+                html += `<table>
+                    <thead><tr>
+                        <th>Fecha</th><th>Tipo</th><th>Número</th><th>Concepto</th>
+                        <th style="text-align:right">Cargos</th><th style="text-align:right">Abonos</th>
+                    </tr></thead><tbody>`;
                 
-                let totalCargos = 0, totalAbonos = 0;
-                const detalles = POLIZAS_DETALLES.filter(d => d.cuenta_id === ctaId && filtradas.some(p => p.id === d.poliza_id));
-                
-                detalles.forEach(d => {
+                let totCargo = 0, totAbono = 0;
+                const dets = POLIZAS_DETALLES.filter(d => d.cuenta_id === ctaId && filt.some(p => p.id === d.poliza_id));
+                dets.forEach(d => {
                     const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                    const fecha = new Date(p.fecha).toLocaleDateString('es-MX');
                     const cargo = d.tipo_movimiento === 'cargo' ? d.monto : 0;
                     const abono = d.tipo_movimiento === 'abono' ? d.monto : 0;
-                    totalCargos += cargo;
-                    totalAbonos += abono;
+                    totCargo += cargo;
+                    totAbono += abono;
                     
                     html += `<tr>
-                        <td>${fecha}</td><td>${p.tipo}</td><td>${p.numero}</td>
-                        <td>${d.concepto}</td>
-                        <td class="text-right num-val">${cargo > 0 ? cargo.toFixed(2) : ''}</td>
-                        <td class="text-right num-val">${abono > 0 ? abono.toFixed(2) : ''}</td>
+                        <td>${new Date(p.fecha).toLocaleDateString('es-MX')}</td>
+                        <td>${p.tipo}</td><td>${p.numero}</td><td>${d.concepto}</td>
+                        <td class="num">${cargo > 0 ? formatNumber(cargo) : ''}</td>
+                        <td class="num">${abono > 0 ? formatNumber(abono) : ''}</td>
                     </tr>`;
                 });
                 
                 html += `<tr class="subtotal-row">
-                    <td colspan="3">SUBTOTAL</td>
-                    <td class="text-right">${totalCargos.toFixed(2)}</td>
-                    <td class="text-right">${totalAbonos.toFixed(2)}</td>
-                </tr></tbody></table></div>`;
+                    <td colspan="4">SUBTOTAL</td>
+                    <td class="num">${formatNumber(totCargo)}</td>
+                    <td class="num">${formatNumber(totAbono)}</td>
+                </tr></tbody></table>`;
             });
         }
         
-        container.innerHTML = html;
+        cont.innerHTML = html;
     }
     
     function generarBalanza() {
-        const container = document.getElementById('balanza-report');
-        const periodo = document.getElementById('filter-balanza-periodo').value;
+        const cont = document.getElementById('balanza-report');
+        const per = document.getElementById('filter-balanza-periodo').value;
         
-        if (!periodo) {
-            container.innerHTML = '<div class="empty">Selecciona un período</div>';
-            return;
-        }
+        if(!per) { cont.innerHTML = '<div class="empty">Selecciona período</div>'; return; }
         
-        const [año, mes] = periodo.split('-');
+        const [año, mes] = per.split('-');
         
         let html = `
             <div class="report-header">
                 <h2>⚖️ BALANZA DE COMPROBACIÓN</h2>
-                <p>CONTPAQ i | Amir Tafreshi</p>
                 <p>Al ${parseInt(mes)}/${año}</p>
             </div>
-            <div class="tbl-wrap">
-                <table class="report">
-                    <thead>
-                        <tr>
-                            <th>Cuenta</th><th>Nombre</th>
-                            <th style="text-align:right">S.I. Deudor</th><th style="text-align:right">S.I. Acreedor</th>
-                            <th style="text-align:right">Cargos</th><th style="text-align:right">Abonos</th>
-                            <th style="text-align:right">S.F. Deudor</th><th style="text-align:right">S.F. Acreedor</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
+            <table><thead><tr>
+                <th>Código</th><th>Cuenta</th>
+                <th style="text-align:right">S.I. Deudor</th><th style="text-align:right">S.I. Acreedor</th>
+                <th style="text-align:right">Cargos</th><th style="text-align:right">Abonos</th>
+                <th style="text-align:right">S.F. Deudor</th><th style="text-align:right">S.F. Acreedor</th>
+            </tr></thead><tbody>`;
         
-        let sumDeudorIni = 0, sumAcreedorIni = 0, sumCargos = 0, sumAbonos = 0, sumDeudorFin = 0, sumAcreedorFin = 0;
+        let sumDeuIni = 0, sumAcrIni = 0, sumCargo = 0, sumAbono = 0, sumDeuFin = 0, sumAcrFin = 0;
         
-        CATALOGO.filter(c => c.tipo !== 'ingreso' && c.tipo !== 'costo' && c.tipo !== 'gasto' && c.tipo !== 'financiero')
-            .sort((a, b) => a.codigo.localeCompare(b.codigo))
+        CATALOGO.filter(c => ['activo','pasivo','capital'].includes(c.tipo))
+            .sort((a,b) => a.codigo.localeCompare(b.codigo))
             .forEach(c => {
-                const detalles = POLIZAS_DETALLES.filter(d => {
+                const dets = POLIZAS_DETALLES.filter(d => {
                     const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                    return d.cuenta_id === c.id && p && new Date(p.fecha).toISOString().slice(0, 7) === periodo;
+                    return d.cuenta_id === c.id && p && new Date(p.fecha).toISOString().slice(0,7) === per;
                 });
                 
-                const cargos = detalles.filter(d => d.tipo_movimiento === 'cargo').reduce((s, d) => s + d.monto, 0);
-                const abonos = detalles.filter(d => d.tipo_movimiento === 'abono').reduce((s, d) => s + d.monto, 0);
+                const cargo = dets.filter(d => d.tipo_movimiento === 'cargo').reduce((s,d) => s + d.monto, 0);
+                const abono = dets.filter(d => d.tipo_movimiento === 'abono').reduce((s,d) => s + d.monto, 0);
                 
-                const saldoIniDeudor = c.saldo_inicial > 0 ? c.saldo_inicial : 0;
-                const saldoIniAcreedor = c.saldo_inicial < 0 ? Math.abs(c.saldo_inicial) : 0;
-                const saldoFinal = saldoIniDeudor - saldoIniAcreedor + cargos - abonos;
-                const saldoFinDeudor = saldoFinal > 0 ? saldoFinal : 0;
-                const saldoFinAcreedor = saldoFinal < 0 ? Math.abs(saldoFinal) : 0;
+                const saldoIniDeu = c.saldo_inicial > 0 ? c.saldo_inicial : 0;
+                const saldoIniAcr = c.saldo_inicial < 0 ? Math.abs(c.saldo_inicial) : 0;
+                const saldoFin = saldoIniDeu - saldoIniAcr + cargo - abono;
+                const saldoFinDeu = saldoFin > 0 ? saldoFin : 0;
+                const saldoFinAcr = saldoFin < 0 ? Math.abs(saldoFin) : 0;
                 
-                sumDeudorIni += saldoIniDeudor;
-                sumAcreedorIni += saldoIniAcreedor;
-                sumCargos += cargos;
-                sumAbonos += abonos;
-                sumDeudorFin += saldoFinDeudor;
-                sumAcreedorFin += saldoFinAcreedor;
+                sumDeuIni += saldoIniDeu;
+                sumAcrIni += saldoIniAcr;
+                sumCargo += cargo;
+                sumAbono += abono;
+                sumDeuFin += saldoFinDeu;
+                sumAcrFin += saldoFinAcr;
                 
                 html += `<tr>
                     <td>${c.codigo}</td><td>${c.nombre}</td>
-                    <td class="text-right num-val">${saldoIniDeudor > 0 ? saldoIniDeudor.toFixed(2) : ''}</td>
-                    <td class="text-right num-val">${saldoIniAcreedor > 0 ? saldoIniAcreedor.toFixed(2) : ''}</td>
-                    <td class="text-right num-val">${cargos > 0 ? cargos.toFixed(2) : ''}</td>
-                    <td class="text-right num-val">${abonos > 0 ? abonos.toFixed(2) : ''}</td>
-                    <td class="text-right num-val">${saldoFinDeudor > 0 ? saldoFinDeudor.toFixed(2) : ''}</td>
-                    <td class="text-right num-val">${saldoFinAcreedor > 0 ? saldoFinAcreedor.toFixed(2) : ''}</td>
+                    <td class="num ${numberClass(saldoIniDeu)}">${saldoIniDeu > 0 ? formatNumber(saldoIniDeu) : '-'}</td>
+                    <td class="num ${numberClass(saldoIniAcr)}">${saldoIniAcr > 0 ? formatNumber(saldoIniAcr) : '-'}</td>
+                    <td class="num ${numberClass(cargo)}">${cargo > 0 ? formatNumber(cargo) : '-'}</td>
+                    <td class="num ${numberClass(abono)}">${abono > 0 ? formatNumber(abono) : '-'}</td>
+                    <td class="num ${numberClass(saldoFinDeu)}">${saldoFinDeu > 0 ? formatNumber(saldoFinDeu) : '-'}</td>
+                    <td class="num ${numberClass(saldoFinAcr)}">${saldoFinAcr > 0 ? formatNumber(saldoFinAcr) : '-'}</td>
                 </tr>`;
             });
         
-        html += `
-                    <tr class="total-row">
-                        <td colspan="2">SUMAS IGUALES</td>
-                        <td class="text-right" style="color:#fff">${sumDeudorIni.toFixed(2)}</td>
-                        <td class="text-right" style="color:#fff">${sumAcreedorIni.toFixed(2)}</td>
-                        <td class="text-right" style="color:#fff">${sumCargos.toFixed(2)}</td>
-                        <td class="text-right" style="color:#fff">${sumAbonos.toFixed(2)}</td>
-                        <td class="text-right" style="color:#fff">${sumDeudorFin.toFixed(2)}</td>
-                        <td class="text-right" style="color:#fff">${sumAcreedorFin.toFixed(2)}</td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        `;
+        html += `<tr class="total-row">
+            <td colspan="2">SUMAS IGUALES</td>
+            <td class="num">${formatNumber(sumDeuIni)}</td>
+            <td class="num">${formatNumber(sumAcrIni)}</td>
+            <td class="num">${formatNumber(sumCargo)}</td>
+            <td class="num">${formatNumber(sumAbono)}</td>
+            <td class="num">${formatNumber(sumDeuFin)}</td>
+            <td class="num">${formatNumber(sumAcrFin)}</td>
+        </tr></tbody></table>`;
         
-        container.innerHTML = html;
+        cont.innerHTML = html;
     }
     
     function generarResultados() {
-        const container = document.getElementById('resultados-report');
-        const periodo = document.getElementById('filter-resultados-periodo').value;
+        const cont = document.getElementById('resultados-report');
+        const per = document.getElementById('filter-resultados-periodo').value;
         
-        if (!periodo) {
-            container.innerHTML = '<div class="empty">Selecciona un período</div>';
-            return;
-        }
+        if(!per) { cont.innerHTML = '<div class="empty">Selecciona período</div>'; return; }
         
-        const [año, mes] = periodo.split('-');
+        const [año, mes] = per.split('-');
+        
+        const calcMto = (tipos) => {
+            return POLIZAS_DETALLES.filter(d => {
+                const p = POLIZAS.find(pol => pol.id === d.poliza_id);
+                const c = CATALOGO.find(cc => cc.id === d.cuenta_id);
+                return tipos.includes(c.tipo) && p && new Date(p.fecha).toISOString().slice(0,7) === per;
+            }).reduce((s,d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
+        };
+        
+        const ing = calcMto(['ingreso']);
+        const cst = calcMto(['costo']);
+        const gst = calcMto(['gasto']);
+        const fin = calcMto(['financiero']);
+        
+        const utilBruta = ing - cst;
+        const neto = utilBruta - gst + fin;
         
         let html = `
             <div class="report-header">
                 <h2>📈 ESTADO DE RESULTADOS</h2>
-                <p>CONTPAQ i | Amir Tafreshi</p>
                 <p>Del 01/${mes}/${año} al 30/${mes}/${año}</p>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">INGRESOS</div>
+                <div class="section-line">
+                    <span class="section-line-label">Ingresos por Servicios</span>
+                    <span class="section-line-value num ${numberClass(ing)}">${formatNumber(ing)}</span>
+                </div>
+                <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
+                    <span>Total Ingresos</span>
+                    <span class="section-line-value num">${formatNumber(ing)}</span>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">COSTOS</div>
+                <div class="section-line">
+                    <span class="section-line-label">Costo de Servicios</span>
+                    <span class="section-line-value num ${numberClass(cst)}">${formatNumber(cst)}</span>
+                </div>
+                <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
+                    <span>Total Costos</span>
+                    <span class="section-line-value num">${formatNumber(cst)}</span>
+                </div>
+                <div class="section-line" style="font-weight:600;color:#1e40af;padding-top:8px;margin-top:4px">
+                    <span>Utilidad Bruta</span>
+                    <span class="section-line-value num">${formatNumber(utilBruta)}</span>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">GASTOS</div>
+                <div class="section-line">
+                    <span class="section-line-label">Gastos Generales</span>
+                    <span class="section-line-value num ${numberClass(gst)}">${formatNumber(gst)}</span>
+                </div>
+                <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
+                    <span>Total Gastos</span>
+                    <span class="section-line-value num">${formatNumber(gst)}</span>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">RESULTADO INTEGRAL DE FINANCIAMIENTO</div>
+                <div class="section-line">
+                    <span class="section-line-label">Gastos Financieros</span>
+                    <span class="section-line-value num ${numberClass(fin)}">${formatNumber(fin)}</span>
+                </div>
+                <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
+                    <span>Total Financiero</span>
+                    <span class="section-line-value num">${formatNumber(fin)}</span>
+                </div>
+            </div>
+            
+            <div class="section" style="background:#1e40af;color:#fff;border-color:#1e40af">
+                <div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px">
+                    <span>${neto >= 0 ? '✓ UTILIDAD DEL EJERCICIO' : '✗ PÉRDIDA DEL EJERCICIO'}</span>
+                    <span>${formatNumber(neto)}</span>
+                </div>
             </div>
         `;
         
-        const calcularMonto = (tiposCta) => {
-            return POLIZAS_DETALLES.filter(d => {
-                const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                const cta = CATALOGO.find(c => c.id === d.cuenta_id);
-                return tiposCta.includes(cta.tipo) && p && new Date(p.fecha).toISOString().slice(0, 7) === periodo;
-            }).reduce((s, d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
-        };
-        
-        const ingresos = calcularMonto(['ingreso']);
-        const costos = calcularMonto(['costo']);
-        const gastos = calcularMonto(['gasto']);
-        const financiero = calcularMonto(['financiero']);
-        
-        const utilidadBruta = ingresos - costos;
-        const resultadoNeto = utilidadBruta - gastos + financiero;
-        
-        html += `<div class="er-section">
-            <div class="er-section-title">INGRESOS</div>
-            <div class="er-line">
-                <span class="er-line-label">Ingresos por Servicios</span>
-                <span class="er-line-value">${ingresos.toFixed(2)}</span>
-            </div>
-            <div class="er-line total">
-                <span>Total Ingresos</span>
-                <span>${ingresos.toFixed(2)}</span>
-            </div>
-        </div>`;
-        
-        html += `<div class="er-section">
-            <div class="er-section-title">COSTOS</div>
-            <div class="er-line">
-                <span class="er-line-label">Costo de Servicios</span>
-                <span class="er-line-value">${costos.toFixed(2)}</span>
-            </div>
-            <div class="er-line total">
-                <span>Total Costos</span>
-                <span>${costos.toFixed(2)}</span>
-            </div>
-            <div class="er-line total" style="background:#334155">
-                <span>Utilidad Bruta</span>
-                <span>${utilidadBruta.toFixed(2)}</span>
-            </div>
-        </div>`;
-        
-        html += `<div class="er-section">
-            <div class="er-section-title">GASTOS</div>
-            <div class="er-line">
-                <span class="er-line-label">Gastos Generales</span>
-                <span class="er-line-value">${gastos.toFixed(2)}</span>
-            </div>
-            <div class="er-line total">
-                <span>Total Gastos</span>
-                <span>${gastos.toFixed(2)}</span>
-            </div>
-        </div>`;
-        
-        html += `<div class="er-section">
-            <div class="er-section-title">RESULTADO INTEGRAL DE FINANCIAMIENTO</div>
-            <div class="er-line">
-                <span class="er-line-label">Gastos Financieros</span>
-                <span class="er-line-value">${financiero.toFixed(2)}</span>
-            </div>
-            <div class="er-line total">
-                <span>Total Financiero</span>
-                <span>${financiero.toFixed(2)}</span>
-            </div>
-        </div>`;
-        
-        html += `<div class="er-section">
-            <div class="er-line result">
-                <span>${resultadoNeto >= 0 ? '✓ UTILIDAD DEL EJERCICIO' : '✗ PÉRDIDA DEL EJERCICIO'}</span>
-                <span>${resultadoNeto.toFixed(2)}</span>
-            </div>
-        </div>`;
-        
-        container.innerHTML = html;
+        cont.innerHTML = html;
     }
     
     function generarBalance() {
-        const container = document.getElementById('balance-report');
-        const fecha = document.getElementById('filter-balance-fecha').value;
+        const cont = document.getElementById('balance-report');
+        const fec = document.getElementById('filter-balance-fecha').value;
         
-        if (!fecha) {
-            container.innerHTML = '<div class="empty">Selecciona una fecha</div>';
-            return;
-        }
+        if(!fec) { cont.innerHTML = '<div class="empty">Selecciona fecha</div>'; return; }
+        
+        const calcSaldo = (ctaId) => {
+            const ini = CATALOGO.find(c => c.id === ctaId).saldo_inicial;
+            const movs = POLIZAS_DETALLES.filter(d => {
+                const p = POLIZAS.find(pol => pol.id === d.poliza_id);
+                return d.cuenta_id === ctaId && p && new Date(p.fecha) <= new Date(fec);
+            }).reduce((s,d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
+            return ini + movs;
+        };
         
         let html = `
             <div class="report-header">
                 <h2>🏦 POSICIÓN FINANCIERA - BALANCE GENERAL</h2>
-                <p>CONTPAQ i | Amir Tafreshi</p>
-                <p>Al ${new Date(fecha).toLocaleDateString('es-MX')}</p>
+                <p>Al ${new Date(fec).toLocaleDateString('es-MX')}</p>
+            </div>
+            
+            <div class="balance-container">
+                <div class="balance-side">
+                    <h3>ACTIVO</h3>
+        `;
+        
+        let totAct = 0;
+        CATALOGO.filter(c => c.tipo === 'activo').forEach(c => {
+            const saldo = calcSaldo(c.id);
+            if(Math.abs(saldo) > 0.01) {
+                totAct += saldo;
+                html += `<div class="balance-item child">
+                    <span>${c.nombre}</span>
+                    <span class="balance-amount num ${numberClass(saldo)}">${formatNumber(saldo)}</span>
+                </div>`;
+            }
+        });
+        
+        html += `<div class="balance-total balance-item">
+                    <span>TOTAL ACTIVO</span>
+                    <span class="balance-amount num">${formatNumber(totAct)}</span>
+                </div>
+                </div>
+                
+                <div class="balance-side">
+                    <h3>PASIVO</h3>
+        `;
+        
+        let totPas = 0;
+        CATALOGO.filter(c => c.tipo === 'pasivo').forEach(c => {
+            const saldo = calcSaldo(c.id);
+            if(Math.abs(saldo) > 0.01) {
+                totPas += Math.abs(saldo);
+                html += `<div class="balance-item child">
+                    <span>${c.nombre}</span>
+                    <span class="balance-amount num ${numberClass(saldo)}">${formatNumber(Math.abs(saldo))}</span>
+                </div>`;
+            }
+        });
+        
+        html += `<div class="balance-total balance-item">
+                    <span>TOTAL PASIVO</span>
+                    <span class="balance-amount num">${formatNumber(totPas)}</span>
+                </div>
+                
+                <h3 style="margin-top:20px">CAPITAL</h3>
+        `;
+        
+        let totCap = 0;
+        CATALOGO.filter(c => c.tipo === 'capital').forEach(c => {
+            const saldo = calcSaldo(c.id);
+            if(Math.abs(saldo) > 0.01) {
+                totCap += saldo;
+                html += `<div class="balance-item child">
+                    <span>${c.nombre}</span>
+                    <span class="balance-amount num ${numberClass(saldo)}">${formatNumber(saldo)}</span>
+                </div>`;
+            }
+        });
+        
+        html += `<div class="balance-total balance-item">
+                    <span>TOTAL CAPITAL</span>
+                    <span class="balance-amount num">${formatNumber(totCap)}</span>
+                </div>
+                
+                <div class="balance-total balance-item" style="margin-top:12px;padding-top:12px;border-top:2px solid #e2e8f0">
+                    <span>SUMA PASIVO + CAPITAL</span>
+                    <span class="balance-amount num">${formatNumber(totPas + totCap)}</span>
+                </div>
+                </div>
             </div>
         `;
         
-        const calcularSaldo = (ctaId) => {
-            const ini = CATALOGO.find(c => c.id === ctaId).saldo_inicial;
-            const movs = POLIZAS_DETALLES.filter(d => {
-                const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                return d.cuenta_id === ctaId && p && new Date(p.fecha) <= new Date(fecha);
-            }).reduce((s, d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
-            return ini + movs;
-        };
-        
-        html += '<div class="balance-container">';
-        
-        // ACTIVOS
-        html += '<div class="balance-side"><h3>ACTIVO</h3>';
-        let totalActivos = 0;
-        CATALOGO.filter(c => c.tipo === 'activo').forEach(c => {
-            const saldo = calcularSaldo(c.id);
-            if (Math.abs(saldo) > 0.01) {
-                totalActivos += saldo;
-                html += `<div class="balance-item child">
-                    <span>${c.nombre}</span>
-                    <span class="balance-amount">${saldo.toFixed(2)}</span>
-                </div>`;
-            }
-        });
-        html += `<div class="balance-item-main">
-            <span>TOTAL ACTIVO</span>
-            <span class="balance-amount">${totalActivos.toFixed(2)}</span>
-        </div></div>`;
-        
-        // PASIVO + CAPITAL
-        html += '<div class="balance-side"><h3>PASIVO</h3>';
-        let totalPasivos = 0;
-        CATALOGO.filter(c => c.tipo === 'pasivo').forEach(c => {
-            const saldo = calcularSaldo(c.id);
-            if (Math.abs(saldo) > 0.01) {
-                totalPasivos += Math.abs(saldo);
-                html += `<div class="balance-item child">
-                    <span>${c.nombre}</span>
-                    <span class="balance-amount">${Math.abs(saldo).toFixed(2)}</span>
-                </div>`;
-            }
-        });
-        html += `<div class="balance-item-main">
-            <span>TOTAL PASIVO</span>
-            <span class="balance-amount">${totalPasivos.toFixed(2)}</span>
-        </div>`;
-        
-        html += '<h3 style="margin-top:16px">CAPITAL</h3>';
-        let totalCapital = 0;
-        CATALOGO.filter(c => c.tipo === 'capital').forEach(c => {
-            const saldo = calcularSaldo(c.id);
-            if (Math.abs(saldo) > 0.01) {
-                totalCapital += saldo;
-                html += `<div class="balance-item child">
-                    <span>${c.nombre}</span>
-                    <span class="balance-amount">${saldo.toFixed(2)}</span>
-                </div>`;
-            }
-        });
-        html += `<div class="balance-item-main">
-            <span>TOTAL CAPITAL</span>
-            <span class="balance-amount">${totalCapital.toFixed(2)}</span>
-        </div>`;
-        
-        const sumaPyC = totalPasivos + totalCapital;
-        html += `<div class="balance-item-main" style="margin-top:8px;border-top:2px solid #475569">
-            <span>SUMA PASIVO + CAPITAL</span>
-            <span class="balance-amount">${sumaPyC.toFixed(2)}</span>
-        </div></div></div>`;
-        
-        container.innerHTML = html;
+        cont.innerHTML = html;
     }
     
-    function setView(viewName) {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById('view-' + viewName).classList.add('active');
-        
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    function setView(v) {
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        document.getElementById('view-' + v).classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
         event.target.classList.add('active');
         
-        if (viewName === 'auxiliar') generarAuxiliar();
-        else if (viewName === 'balanza') generarBalanza();
-        else if (viewName === 'resultados') generarResultados();
-        else if (viewName === 'balance') generarBalance();
+        if(v === 'auxiliar') generarAuxiliar();
+        else if(v === 'balanza') generarBalanza();
+        else if(v === 'resultados') generarResultados();
+        else if(v === 'balance') generarBalance();
     }
     
     function exportarAuxiliar() {
-        const periodo = document.getElementById('filter-auxiliar-periodo').value;
-        const ws = XLSX.utils.aoa_to_sheet([['Auxiliar Libro Mayor', periodo]]);
+        const ws = XLSX.utils.aoa_to_sheet([['Auxiliar', document.getElementById('filter-auxiliar-periodo').value]]);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws);
-        XLSX.writeFile(wb, `Auxiliar_${periodo}.xlsx`);
+        XLSX.writeFile(wb, 'Auxiliar.xlsx');
     }
     
     function exportarBalanza() {
-        const periodo = document.getElementById('filter-balanza-periodo').value;
-        const ws = XLSX.utils.aoa_to_sheet([['Balanza de Comprobación', periodo]]);
+        const ws = XLSX.utils.aoa_to_sheet([['Balanza', document.getElementById('filter-balanza-periodo').value]]);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws);
-        XLSX.writeFile(wb, `Balanza_${periodo}.xlsx`);
+        XLSX.writeFile(wb, 'Balanza.xlsx');
     }
     
     function exportarResultados() {
-        const periodo = document.getElementById('filter-resultados-periodo').value;
-        const ws = XLSX.utils.aoa_to_sheet([['Estado de Resultados', periodo]]);
+        const ws = XLSX.utils.aoa_to_sheet([['Resultados', document.getElementById('filter-resultados-periodo').value]]);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws);
-        XLSX.writeFile(wb, `Resultados_${periodo}.xlsx`);
+        XLSX.writeFile(wb, 'Resultados.xlsx');
     }
     
     function exportarBalance() {
-        const fecha = document.getElementById('filter-balance-fecha').value;
-        const ws = XLSX.utils.aoa_to_sheet([['Balance General', fecha]]);
+        const ws = XLSX.utils.aoa_to_sheet([['Balance', document.getElementById('filter-balance-fecha').value]]);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws);
-        XLSX.writeFile(wb, `Balance_${fecha}.xlsx`);
+        XLSX.writeFile(wb, 'Balance.xlsx');
     }
     
+    window.setView = setView;
     window.generarAuxiliar = generarAuxiliar;
     window.generarBalanza = generarBalanza;
     window.generarResultados = generarResultados;
@@ -729,7 +839,6 @@
     window.exportarBalanza = exportarBalanza;
     window.exportarResultados = exportarResultados;
     window.exportarBalance = exportarBalance;
-    window.setView = setView;
     
     window.addEventListener('load', () => {
         generarMovimientos();
