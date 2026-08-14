@@ -177,6 +177,8 @@
             border-top:1px solid #334155
         }
         
+        .subtotal-row td.num-negative{color:var(--rojo-negativo)}
+        
         /* TOTAL */
         .total-row td{
             background:var(--azul-ejecutivo);
@@ -186,6 +188,8 @@
             border-bottom:2px solid var(--azul-ejecutivo);
             height:22px
         }
+        
+        .total-row td.num-negative{color:var(--rojo-negativo)}
         
         /* ACCOUNT HEADER */
         .cuenta-header{
@@ -489,8 +493,8 @@
             
             html += `<tr class="total-row">
                 <td colspan="4">TOTAL</td>
-                <td class="num">${formatNumber(totCargo)}</td>
-                <td class="num">${formatNumber(totAbono)}</td>
+                <td class="num ${numberClass(totCargo)}">${formatNumber(totCargo)}</td>
+                <td class="num ${numberClass(totAbono)}">${formatNumber(totAbono)}</td>
             </tr></tbody></table>`;
         } else {
             const ctasConMov = [...new Set(POLIZAS_DETALLES.filter(d => filt.some(p => p.id === d.poliza_id)).map(d => d.cuenta_id))];
@@ -522,8 +526,8 @@
                 
                 html += `<tr class="subtotal-row">
                     <td colspan="4">SUBTOTAL</td>
-                    <td class="num">${formatNumber(totCargo)}</td>
-                    <td class="num">${formatNumber(totAbono)}</td>
+                    <td class="num ${numberClass(totCargo)}">${formatNumber(totCargo)}</td>
+                    <td class="num ${numberClass(totAbono)}">${formatNumber(totAbono)}</td>
                 </tr></tbody></table>`;
             });
         }
@@ -590,12 +594,12 @@
         
         html += `<tr class="total-row">
             <td colspan="2">SUMAS IGUALES</td>
-            <td class="num">${formatNumber(sumDeuIni)}</td>
-            <td class="num">${formatNumber(sumAcrIni)}</td>
-            <td class="num">${formatNumber(sumCargo)}</td>
-            <td class="num">${formatNumber(sumAbono)}</td>
-            <td class="num">${formatNumber(sumDeuFin)}</td>
-            <td class="num">${formatNumber(sumAcrFin)}</td>
+            <td class="num ${numberClass(sumDeuIni)}">${formatNumber(sumDeuIni)}</td>
+            <td class="num ${numberClass(sumAcrIni)}">${formatNumber(sumAcrIni)}</td>
+            <td class="num ${numberClass(sumCargo)}">${formatNumber(sumCargo)}</td>
+            <td class="num ${numberClass(sumAbono)}">${formatNumber(sumAbono)}</td>
+            <td class="num ${numberClass(sumDeuFin)}">${formatNumber(sumDeuFin)}</td>
+            <td class="num ${numberClass(sumAcrFin)}">${formatNumber(sumAcrFin)}</td>
         </tr></tbody></table>`;
         
         cont.innerHTML = html;
@@ -639,7 +643,7 @@
                 </div>
                 <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
                     <span>Total Ingresos</span>
-                    <span class="section-line-value num">${formatNumber(ing)}</span>
+                    <span class="section-line-value num ${numberClass(ing)}">${formatNumber(ing)}</span>
                 </div>
             </div>
             
@@ -651,11 +655,11 @@
                 </div>
                 <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
                     <span>Total Costos</span>
-                    <span class="section-line-value num">${formatNumber(cst)}</span>
+                    <span class="section-line-value num ${numberClass(cst)}">${formatNumber(cst)}</span>
                 </div>
                 <div class="section-line" style="font-weight:600;color:#1e40af;padding-top:8px;margin-top:4px">
                     <span>Utilidad Bruta</span>
-                    <span class="section-line-value num">${formatNumber(utilBruta)}</span>
+                    <span class="section-line-value num ${numberClass(utilBruta)}">${formatNumber(utilBruta)}</span>
                 </div>
             </div>
             
@@ -667,7 +671,7 @@
                 </div>
                 <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
                     <span>Total Gastos</span>
-                    <span class="section-line-value num">${formatNumber(gst)}</span>
+                    <span class="section-line-value num ${numberClass(gst)}">${formatNumber(gst)}</span>
                 </div>
             </div>
             
@@ -679,14 +683,14 @@
                 </div>
                 <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
                     <span>Total Financiero</span>
-                    <span class="section-line-value num">${formatNumber(fin)}</span>
+                    <span class="section-line-value num ${numberClass(fin)}">${formatNumber(fin)}</span>
                 </div>
             </div>
             
             <div class="section" style="background:#1e40af;color:#fff;border-color:#1e40af">
                 <div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px">
                     <span>${neto >= 0 ? '✓ UTILIDAD DEL EJERCICIO' : '✗ PÉRDIDA DEL EJERCICIO'}</span>
-                    <span>${formatNumber(neto)}</span>
+                    <span class="${numberClass(neto)}">${formatNumber(neto)}</span>
                 </div>
             </div>
         `;
@@ -734,7 +738,7 @@
         
         html += `<div class="balance-total balance-item">
                     <span>TOTAL ACTIVO</span>
-                    <span class="balance-amount num">${formatNumber(totAct)}</span>
+                    <span class="balance-amount num ${numberClass(totAct)}">${formatNumber(totAct)}</span>
                 </div>
                 </div>
                 
@@ -756,7 +760,7 @@
         
         html += `<div class="balance-total balance-item">
                     <span>TOTAL PASIVO</span>
-                    <span class="balance-amount num">${formatNumber(totPas)}</span>
+                    <span class="balance-amount num ${numberClass(totPas)}">${formatNumber(totPas)}</span>
                 </div>
                 
                 <h3 style="margin-top:20px">CAPITAL</h3>
@@ -776,12 +780,12 @@
         
         html += `<div class="balance-total balance-item">
                     <span>TOTAL CAPITAL</span>
-                    <span class="balance-amount num">${formatNumber(totCap)}</span>
+                    <span class="balance-amount num ${numberClass(totCap)}">${formatNumber(totCap)}</span>
                 </div>
                 
                 <div class="balance-total balance-item" style="margin-top:12px;padding-top:12px;border-top:2px solid #e2e8f0">
                     <span>SUMA PASIVO + CAPITAL</span>
-                    <span class="balance-amount num">${formatNumber(totPas + totCap)}</span>
+                    <span class="balance-amount num ${numberClass(totPas + totCap)}">${formatNumber(totPas + totCap)}</span>
                 </div>
                 </div>
             </div>
