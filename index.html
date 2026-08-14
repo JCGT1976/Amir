@@ -374,7 +374,7 @@
         if(n === 0 || n === null || n === undefined) return '-';
         const sign = n < 0 ? '-' : '';
         const abs = Math.abs(n);
-        return sign + abs.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        return sign + abs.toLocaleString('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0});
     }
     
     function numberClass(n) {
