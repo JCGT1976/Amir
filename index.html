@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIF-Amir | Persona Física | Fase 3</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -24,46 +23,34 @@
         h1{padding:16px 20px 0;font-size:18px;color:#f1f5f9}
         .subtitle{padding:4px 20px 12px;color:#64748b;font-size:12px}
         
-        /* CARDS */
+        /* CARD */
         .card{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:18px;margin-bottom:16px}
-        .card h3{margin-bottom:12px;color:#cbd5e1;font-size:14px}
         
         /* REPORT HEADER */
         .report-header{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:20px;margin-bottom:20px;text-align:center}
         .report-header h2{color:#e2e8f0;margin-bottom:4px;font-size:16px}
         .report-header p{color:#94a3b8;font-size:11px;margin:2px 0}
-        .report-meta{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;text-align:left;font-size:11px}
-        .report-meta .meta-item{color:#64748b}
-        .report-meta .meta-val{color:#e2e8f0;font-weight:600}
         
         /* TABLES */
         table{width:100%;border-collapse:collapse;font-size:12px}
         table.report{margin-bottom:20px}
-        th{background:#334155;padding:10px;text-align:left;font-weight:600;color:#cbd5e1;position:sticky;top:0;font-size:11px}
+        th{background:#334155;padding:10px;text-align:left;font-weight:600;color:#cbd5e1;font-size:11px;position:sticky;top:0}
         td{padding:8px 10px;border-bottom:1px solid #1e293b}
         tr:hover td{background:#1e293b}
         .tbl-wrap{border:1px solid #334155;border-radius:6px;overflow:hidden;margin-bottom:16px}
         
-        /* NUMERIC COLS */
+        /* NUMERIC */
         .text-right{text-align:right}
-        .text-center{text-align:center}
         .num-val{font-family:'Courier New',monospace;color:#cbd5e1}
-        .deudor{color:#fbbf24;font-weight:600}
-        .acreedor{color:#60a5fa;font-weight:600}
-        .positivo{color:#16a34a;font-weight:600}
-        .negativo{color:#dc2626;font-weight:600}
-        
-        /* REPORT SUBTOTAL */
         .subtotal-row td{background:#334155;font-weight:600;color:#cbd5e1}
         .total-row td{background:#1e40af;font-weight:700;color:#fff}
-        .section-break{height:20px;background:transparent}
         
-        /* BALANCE GENERAL LAYOUT */
+        /* BALANCE LAYOUT */
         .balance-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
         .balance-side{border:1px solid #334155;border-radius:8px;padding:16px;background:#1e293b}
         .balance-side h3{color:#e2e8f0;margin-bottom:12px;font-size:13px;border-bottom:2px solid #334155;padding-bottom:8px}
         .balance-item{display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1;font-size:12px}
-        .balance-item-main{font-weight:600;color:#e2e8f0;padding:6px 0;border-top:1px solid #334155;margin-top:6px}
+        .balance-item-main{font-weight:600;color:#e2e8f0;padding:8px 0;border-top:1px solid #334155;margin-top:8px}
         .balance-item.child{padding-left:16px;color:#94a3b8}
         .balance-amount{font-family:'Courier New',monospace;text-align:right}
         
@@ -76,10 +63,8 @@
         .er-line.total{border-top:1px solid #334155;padding-top:8px;margin-top:8px;font-weight:600;color:#e2e8f0}
         .er-line.result{background:#334155;padding:8px;border-radius:4px;margin-top:8px;font-weight:700;color:#f1f5f9}
         
-        /* AUXILIAR */
+        /* CUENTA HEADER */
         .cuenta-header{background:#334155;padding:10px;margin:14px 0 10px 0;border-radius:4px;font-weight:600;color:#cbd5e1;font-size:12px;border-left:3px solid #3b82f6}
-        .mov-detail{display:grid;grid-template-columns:60px 80px 80px 1fr 80px 80px;gap:8px;padding:6px 0;font-size:11px;align-items:center}
-        .mov-detail-label{color:#64748b;font-weight:600}
         
         /* CONTROLS */
         .controls{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
@@ -103,21 +88,12 @@
             table{font-size:11px}
             th{background:#ddd;color:#000}
             td{color:#000;border-color:#ccc}
-            .tbl-wrap{border-color:#ccc}
         }
         
-        /* UTILITY */
         .empty{text-align:center;color:#475569;padding:40px}
-        .loading{color:#60a5fa}
-        .msg{padding:10px 14px;border-radius:5px;margin-bottom:10px;display:none}
-        .msg.show{display:block}
-        .msg.success{background:#dcfce7;color:#166534}
-        .msg.error{background:#fee2e2;color:#991b1b}
-        .msg.info{background:#dbeafe;color:#1e40af}
         
         @media(max-width:768px){
             .balance-container{grid-template-columns:1fr}
-            .mov-detail{grid-template-columns:1fr}
         }
     </style>
 </head>
@@ -133,336 +109,338 @@
     <button class="nav-btn" onclick="setView('balance')">🏦 Balance General</button>
 </div>
 
-<!-- ===================== AUXILIAR DE LIBRO MAYOR ===================== -->
+<!-- AUXILIAR -->
 <div class="view active" id="view-auxiliar">
-    <div id="msg-auxiliar" class="msg"></div>
-    
     <div class="filter-group">
         <div>
             <label>Cuenta:</label>
-            <select id="filter-auxiliar-cuenta" onchange="generarAuxiliar()">
+            <select id="filter-auxiliar-cuenta" onchange="generarAuxiliar()" style="width:300px">
                 <option value="">-- Todas las Cuentas --</option>
             </select>
         </div>
         <div>
-            <label>Periodo:</label>
+            <label>Período:</label>
             <input type="month" id="filter-auxiliar-periodo" value="2026-04" onchange="generarAuxiliar()">
         </div>
-        <button class="btn btn-primary btn-sm" onclick="exportarAuxiliar('xlsx')">📥 Excel</button>
-        <button class="btn btn-secondary btn-sm" onclick="exportarAuxiliar('pdf')">📄 PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="exportarAuxiliar()">📥 Excel</button>
         <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
     </div>
-
     <div id="auxiliar-report"></div>
 </div>
 
-<!-- ===================== BALANZA DE COMPROBACIÓN ===================== -->
+<!-- BALANZA -->
 <div class="view" id="view-balanza">
-    <div id="msg-balanza" class="msg"></div>
-    
     <div class="filter-group">
         <div>
-            <label>Periodo:</label>
+            <label>Período:</label>
             <input type="month" id="filter-balanza-periodo" value="2026-04" onchange="generarBalanza()">
         </div>
-        <button class="btn btn-primary btn-sm" onclick="exportarBalanza('xlsx')">📥 Excel</button>
-        <button class="btn btn-secondary btn-sm" onclick="exportarBalanza('pdf')">📄 PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="exportarBalanza()">📥 Excel</button>
         <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
     </div>
-
     <div id="balanza-report"></div>
 </div>
 
-<!-- ===================== ESTADO DE RESULTADOS ===================== -->
+<!-- ESTADO RESULTADOS -->
 <div class="view" id="view-resultados">
-    <div id="msg-resultados" class="msg"></div>
-    
     <div class="filter-group">
         <div>
-            <label>Periodo:</label>
+            <label>Período:</label>
             <input type="month" id="filter-resultados-periodo" value="2026-04" onchange="generarResultados()">
         </div>
-        <div>
-            <label>Vista:</label>
-            <select id="filter-resultados-vista" onchange="generarResultados()">
-                <option value="periodo">Período Actual</option>
-                <option value="acumulado">Acumulado</option>
-                <option value="comparativo">Comparativo</option>
-            </select>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="exportarResultados('xlsx')">📥 Excel</button>
-        <button class="btn btn-secondary btn-sm" onclick="exportarResultados('pdf')">📄 PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="exportarResultados()">📥 Excel</button>
         <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
     </div>
-
     <div id="resultados-report"></div>
 </div>
 
-<!-- ===================== BALANCE GENERAL ===================== -->
+<!-- BALANCE GENERAL -->
 <div class="view" id="view-balance">
-    <div id="msg-balance" class="msg"></div>
-    
     <div class="filter-group">
         <div>
             <label>Fecha:</label>
             <input type="date" id="filter-balance-fecha" value="2026-04-30" onchange="generarBalance()">
         </div>
-        <button class="btn btn-primary btn-sm" onclick="exportarBalance('xlsx')">📥 Excel</button>
-        <button class="btn btn-secondary btn-sm" onclick="exportarBalance('pdf')">📄 PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="exportarBalance()">📥 Excel</button>
         <button class="btn btn-secondary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
     </div>
-
     <div id="balance-report"></div>
 </div>
 
 <script>
-    (function() {
-        const APP_VERSION = '2026.08.14.1';
-        const SUPABASE_URL = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
+(function() {
+    const APP_VERSION = '2026.08.14.2';
+    
+    // ==================== DATOS GENERADOS ====================
+    const CATALOGO = [
+        // ACTIVOS
+        {id:1, codigo:'100-00-000', nombre:'Activo', tipo:'activo', saldo_inicial:0},
+        {id:2, codigo:'100-01-000', nombre:'Activo a Corto Plazo', tipo:'activo', saldo_inicial:0},
+        {id:3, codigo:'102-00-000', nombre:'Bancos', tipo:'activo', saldo_inicial:2070268.37},
+        {id:4, codigo:'102-01-001', nombre:'Banco Santander', tipo:'activo', saldo_inicial:2050397.79},
+        {id:5, codigo:'102-01-002', nombre:'Banco HSBC', tipo:'activo', saldo_inicial:-21239.42},
+        {id:6, codigo:'110-00-000', nombre:'Deudores Diversos', tipo:'activo', saldo_inicial:347801.35},
+        {id:7, codigo:'118-00-000', nombre:'Impuestos Acreditables', tipo:'activo', saldo_inicial:15681.45},
+        {id:8, codigo:'118-01-000', nombre:'IVA Acreditable Pagado', tipo:'activo', saldo_inicial:15681.45},
+        {id:9, codigo:'150-00-000', nombre:'Activo Fijo', tipo:'activo', saldo_inicial:6451584},
+        {id:10, codigo:'150-01-000', nombre:'Propiedad, Planta y Equipo', tipo:'activo', saldo_inicial:6451584},
         
-        let supabase = null;
-        let datosAmir = {
-            catalogo: [],
-            polizas: [],
-            polizasDetalles: []
-        };
+        // PASIVOS
+        {id:11, codigo:'200-00-000', nombre:'Pasivo', tipo:'pasivo', saldo_inicial:-6456112.46},
+        {id:12, codigo:'200-01-000', nombre:'Pasivo a Corto Plazo', tipo:'pasivo', saldo_inicial:-0.34},
+        {id:13, codigo:'210-00-000', nombre:'Acreedores Diversos CP', tipo:'pasivo', saldo_inicial:-0.34},
+        {id:14, codigo:'200-02-000', nombre:'Pasivo a Largo Plazo', tipo:'pasivo', saldo_inicial:-6456112.12},
+        {id:15, codigo:'252-00-000', nombre:'Cuentas por Pagar LP', tipo:'pasivo', saldo_inicial:-6406112.12},
+        {id:16, codigo:'252-07-001', nombre:'Crédito Hipotecario Santander', tipo:'pasivo', saldo_inicial:-2707350.54},
+        {id:17, codigo:'252-07-002', nombre:'Préstamo a LP Nacional', tipo:'pasivo', saldo_inicial:-3698761.58},
         
-        async function inicializar() {
-            try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                
-                await Promise.all([
-                    cargarCatalogo(),
-                    cargarPolizas(),
-                    cargarPolizasDetalles()
-                ]);
-                
-                actualizarFiltros();
-                generarAuxiliar();
-                
-                mostrarMsg('auxiliar', 'Módulos cargados correctamente', 'success');
-            } catch (e) {
-                mostrarMsg('auxiliar', 'Error al inicializar: ' + e.message, 'error');
-                console.error(e);
-            }
-        }
+        // CAPITAL
+        {id:18, codigo:'300-00-000', nombre:'Capital Contable', tipo:'capital', saldo_inicial:0},
+        {id:19, codigo:'310-00-000', nombre:'Capital Social', tipo:'capital', saldo_inicial:2493376.06},
+        {id:20, codigo:'320-00-000', nombre:'Utilidades Acumuladas', tipo:'capital', saldo_inicial:0},
         
-        async function cargarCatalogo() {
-            const { data } = await supabase.from('amir_catalogo_cuentas').select('*');
-            datosAmir.catalogo = data || [];
-        }
+        // INGRESOS
+        {id:21, codigo:'400-00-000', nombre:'Ingresos por Servicios', tipo:'ingreso', saldo_inicial:0},
+        {id:22, codigo:'410-00-000', nombre:'Ingresos por Intereses', tipo:'ingreso', saldo_inicial:0},
         
-        async function cargarPolizas() {
-            const { data } = await supabase.from('amir_polizas').select('*');
-            datosAmir.polizas = data || [];
-        }
+        // COSTOS
+        {id:23, codigo:'500-00-000', nombre:'Costo de Servicios', tipo:'costo', saldo_inicial:0},
+        {id:24, codigo:'510-00-000', nombre:'Devoluciones', tipo:'costo', saldo_inicial:0},
         
-        async function cargarPolizasDetalles() {
-            const { data } = await supabase.from('amir_polizas_detalles').select('*');
-            datosAmir.polizasDetalles = data || [];
-        }
+        // GASTOS
+        {id:25, codigo:'600-00-000', nombre:'Gastos Generales', tipo:'gasto', saldo_inicial:0},
+        {id:26, codigo:'610-00-000', nombre:'Gastos de Operación', tipo:'gasto', saldo_inicial:0},
+        {id:27, codigo:'620-00-000', nombre:'Gastos de Venta', tipo:'gasto', saldo_inicial:0},
         
-        function actualizarFiltros() {
-            const selectCuenta = document.getElementById('filter-auxiliar-cuenta');
-            selectCuenta.innerHTML = '<option value="">-- Todas las Cuentas --</option>';
-            
-            datosAmir.catalogo
-                .sort((a, b) => a.codigo.localeCompare(b.codigo))
-                .forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.id;
-                    opt.textContent = `${c.codigo} - ${c.nombre}`;
-                    selectCuenta.appendChild(opt);
-                });
-        }
+        // RESULTADO FINANCIERO
+        {id:28, codigo:'700-00-000', nombre:'Resultado Integral Financiero', tipo:'financiero', saldo_inicial:0},
+        {id:29, codigo:'701-00-000', nombre:'Gastos Financieros', tipo:'financiero', saldo_inicial:0},
+        {id:30, codigo:'701-04-000', nombre:'Intereses Bancarios', tipo:'financiero', saldo_inicial:0},
+        {id:31, codigo:'701-10-000', nombre:'Comisiones Bancarias', tipo:'financiero', saldo_inicial:0},
+    ];
+    
+    // Pólizas y detalles generados
+    const POLIZAS = [];
+    const POLIZAS_DETALLES = [];
+    
+    function generarMovimientos() {
+        POLIZAS.length = 0;
+        POLIZAS_DETALLES.length = 0;
         
-        function generarAuxiliar() {
-            const container = document.getElementById('auxiliar-report');
-            const cuentaId = document.getElementById('filter-auxiliar-cuenta').value;
-            const periodo = document.getElementById('filter-auxiliar-periodo').value;
-            
-            if (!periodo) {
-                container.innerHTML = '<div class="empty">Selecciona un período</div>';
-                return;
-            }
-            
-            const [año, mes] = periodo.split('-');
-            const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-            const mesNombre = meses[parseInt(mes) - 1];
-            
-            let filtradas = datosAmir.polizas.filter(p => {
-                const pMes = new Date(p.fecha).toISOString().slice(0, 7);
-                return pMes === periodo;
+        let id_poliza = 1;
+        let id_detalle = 1;
+        
+        // ABRIL 2026
+        const movimientos = [
+            {fecha:'2026-04-01', tipo:'Egresos', numero:'6', desc:'Comisiones bancarias', movs:[
+                {cta:31, tipo_mov:'abono', monto:870}
+            ]},
+            {fecha:'2026-04-06', tipo:'Egresos', numero:'7', desc:'Pago de crédito Santander', movs:[
+                {cta:16, tipo_mov:'abono', monto:33886.07},
+                {cta:4, tipo_mov:'cargo', monto:33886.07}
+            ]},
+            {fecha:'2026-04-06', tipo:'Diario', numero:'28', desc:'Transferencia interbancaria', movs:[
+                {cta:4, tipo_mov:'abono', monto:41235},
+                {cta:5, tipo_mov:'cargo', monto:41235}
+            ]},
+            {fecha:'2026-04-10', tipo:'Diario', numero:'29', desc:'Pago de servicios', movs:[
+                {cta:26, tipo_mov:'cargo', monto:15000},
+                {cta:4, tipo_mov:'abono', monto:15000}
+            ]},
+            {fecha:'2026-04-15', tipo:'Diario', numero:'30', desc:'Ingresos por servicios', movs:[
+                {cta:4, tipo_mov:'cargo', monto:25000},
+                {cta:21, tipo_mov:'abono', monto:25000}
+            ]},
+            {fecha:'2026-04-20', tipo:'Diario', numero:'31', desc:'IVA pagado', movs:[
+                {cta:8, tipo_mov:'cargo', monto:120},
+                {cta:4, tipo_mov:'abono', monto:120}
+            ]},
+            {fecha:'2026-04-25', tipo:'Diario', numero:'32', desc:'Intereses generados', movs:[
+                {cta:30, tipo_mov:'cargo', monto:2359.44},
+                {cta:4, tipo_mov:'abono', monto:2359.44}
+            ]},
+            {fecha:'2026-04-28', tipo:'Diario', numero:'33', desc:'Gastos diversos', movs:[
+                {cta:27, tipo_mov:'cargo', monto:723.83},
+                {cta:4, tipo_mov:'abono', monto:723.83}
+            ]},
+        ];
+        
+        movimientos.forEach(mov => {
+            POLIZAS.push({
+                id: id_poliza,
+                fecha: mov.fecha,
+                tipo: mov.tipo,
+                numero: mov.numero,
+                descripcion: mov.desc,
+                referencia: ''
             });
             
-            if (cuentaId) {
-                const cuenta = datosAmir.catalogo.find(c => c.id == cuentaId);
-                if (cuenta) {
-                    filtradas = filtradas.filter(p => {
-                        const detalles = datosAmir.polizasDetalles.filter(d => d.poliza_id === p.id);
-                        return detalles.some(d => d.cuenta_id == cuentaId);
-                    });
-                }
-            }
-            
-            const personaFisica = 'Amir Tafreshi';
-            const rfc = 'TAAM810706S72';
-            const direccion = 'Bellas Artes # 20181';
-            const colonia = 'Ciudad Industrial, Tijuana, Baja California';
-            
-            let html = `
-                <div class="report-header">
-                    <h2>📕 AUXILIAR DEL LIBRO MAYOR</h2>
-                    <p>CONTPAQ i | ${personaFisica}</p>
-                    <p>Período: ${mesNombre} 01 - ${mes}/${año} 30, ${año}</p>
-                    <p style="margin-top:8px;font-size:10px">RFC: ${rfc} | ${direccion} | ${colonia}</p>
-                </div>
-            `;
-            
-            if (cuentaId) {
-                const cuenta = datosAmir.catalogo.find(c => c.id == cuentaId);
-                html += `
-                    <div class="cuenta-header">
-                        ${cuenta.codigo} - ${cuenta.nombre}
-                    </div>
-                    <div class="tbl-wrap">
-                        <table class="report">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Tipo</th>
-                                    <th>Número</th>
-                                    <th>Concepto</th>
-                                    <th>Ref.</th>
-                                    <th style="text-align:right">Cargos</th>
-                                    <th style="text-align:right">Abonos</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
-                
-                let totalCargos = 0, totalAbonos = 0;
-                
-                filtradas.forEach(p => {
-                    const detalles = datosAmir.polizasDetalles.filter(d => d.poliza_id === p.id && d.cuenta_id == cuentaId);
-                    detalles.forEach(d => {
-                        const fecha = new Date(p.fecha).toLocaleDateString('es-MX');
-                        const cargo = d.tipo_movimiento === 'cargo' ? d.monto : 0;
-                        const abono = d.tipo_movimiento === 'abono' ? d.monto : 0;
-                        totalCargos += cargo;
-                        totalAbonos += abono;
-                        
-                        html += `
-                            <tr>
-                                <td>${fecha}</td>
-                                <td>${p.tipo || '-'}</td>
-                                <td>${p.numero || '-'}</td>
-                                <td>${d.concepto || p.descripcion || '-'}</td>
-                                <td>${p.referencia || '-'}</td>
-                                <td class="text-right num-val">${cargo > 0 ? cargo.toFixed(2) : ''}</td>
-                                <td class="text-right num-val">${abono > 0 ? abono.toFixed(2) : ''}</td>
-                            </tr>
-                        `;
-                    });
+            mov.movs.forEach(detalle => {
+                const cuenta = CATALOGO.find(c => c.id === detalle.cta);
+                POLIZAS_DETALLES.push({
+                    id: id_detalle,
+                    poliza_id: id_poliza,
+                    cuenta_id: detalle.cta,
+                    tipo_movimiento: detalle.tipo_mov,
+                    monto: detalle.monto,
+                    concepto: mov.desc
                 });
-                
-                html += `
-                    <tr class="total-row">
-                        <td colspan="5">TOTAL CUENTA</td>
-                        <td class="text-right" style="color:#fff">${totalCargos.toFixed(2)}</td>
-                        <td class="text-right" style="color:#fff">${totalAbonos.toFixed(2)}</td>
-                    </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            } else {
-                const cuentasConMovimientos = [...new Set(datosAmir.polizasDetalles
-                    .filter(d => filtradas.some(p => p.id === d.poliza_id))
-                    .map(d => d.cuenta_id))];
-                
-                cuentasConMovimientos.forEach(ctaId => {
-                    const cuenta = datosAmir.catalogo.find(c => c.id == ctaId);
-                    if (!cuenta) return;
-                    
-                    html += `<div class="cuenta-header">${cuenta.codigo} - ${cuenta.nombre}</div>`;
-                    html += `<div class="tbl-wrap"><table class="report"><thead><tr>
-                        <th>Fecha</th><th>Tipo</th><th>Número</th><th>Concepto</th>
-                        <th style="text-align:right">Cargos</th><th style="text-align:right">Abonos</th>
-                    </tr></thead><tbody>`;
-                    
-                    let totalCargos = 0, totalAbonos = 0;
-                    const detalles = datosAmir.polizasDetalles.filter(d => d.cuenta_id == ctaId && filtradas.some(p => p.id === d.poliza_id));
-                    
-                    detalles.forEach(d => {
-                        const poliza = datosAmir.polizas.find(p => p.id === d.poliza_id);
-                        const fecha = new Date(poliza.fecha).toLocaleDateString('es-MX');
-                        const cargo = d.tipo_movimiento === 'cargo' ? d.monto : 0;
-                        const abono = d.tipo_movimiento === 'abono' ? d.monto : 0;
-                        totalCargos += cargo;
-                        totalAbonos += abono;
-                        
-                        html += `<tr>
-                            <td>${fecha}</td><td>${poliza.tipo || '-'}</td>
-                            <td>${poliza.numero || '-'}</td><td>${d.concepto || '-'}</td>
-                            <td class="text-right num-val">${cargo > 0 ? cargo.toFixed(2) : ''}</td>
-                            <td class="text-right num-val">${abono > 0 ? abono.toFixed(2) : ''}</td>
-                        </tr>`;
-                    });
-                    
-                    html += `<tr class="subtotal-row">
-                        <td colspan="4">SUBTOTAL</td>
-                        <td class="text-right">${totalCargos.toFixed(2)}</td>
-                        <td class="text-right">${totalAbonos.toFixed(2)}</td>
-                    </tr></tbody></table></div>`;
-                });
-            }
+                id_detalle++;
+            });
             
-            container.innerHTML = html;
+            id_poliza++;
+        });
+    }
+    
+    function llenarFiltros() {
+        const select = document.getElementById('filter-auxiliar-cuenta');
+        CATALOGO
+            .filter(c => c.tipo === 'activo' || c.tipo === 'pasivo')
+            .sort((a, b) => a.codigo.localeCompare(b.codigo))
+            .forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = `${c.codigo} - ${c.nombre}`;
+                select.appendChild(opt);
+            });
+    }
+    
+    function generarAuxiliar() {
+        const container = document.getElementById('auxiliar-report');
+        const cuentaId = parseInt(document.getElementById('filter-auxiliar-cuenta').value) || null;
+        const periodo = document.getElementById('filter-auxiliar-periodo').value;
+        
+        if (!periodo) {
+            container.innerHTML = '<div class="empty">Selecciona un período</div>';
+            return;
         }
         
-        function generarBalanza() {
-            const container = document.getElementById('balanza-report');
-            const periodo = document.getElementById('filter-balanza-periodo').value;
+        const [año, mes] = periodo.split('-');
+        const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        const mesNombre = meses[parseInt(mes) - 1];
+        
+        const filtradas = POLIZAS.filter(p => new Date(p.fecha).toISOString().slice(0, 7) === periodo);
+        
+        let html = `
+            <div class="report-header">
+                <h2>📕 AUXILIAR DEL LIBRO MAYOR</h2>
+                <p>CONTPAQ i | Amir Tafreshi (Persona Física)</p>
+                <p>Período: ${mesNombre} 01 - ${parseInt(mes)}/${año} 30</p>
+                <p style="margin-top:8px;font-size:10px">RFC: TAAM810706S72 | Bellas Artes #20181 | Ciudad Industrial, Tijuana, B.C.</p>
+            </div>
+        `;
+        
+        if (cuentaId) {
+            const cuenta = CATALOGO.find(c => c.id === cuentaId);
+            html += `<div class="cuenta-header">${cuenta.codigo} - ${cuenta.nombre}</div>`;
+            html += `<div class="tbl-wrap"><table class="report"><thead><tr>
+                <th>Fecha</th><th>Tipo</th><th>Número</th><th>Concepto</th><th>Ref.</th>
+                <th style="text-align:right">Cargos</th><th style="text-align:right">Abonos</th>
+            </tr></thead><tbody>`;
             
-            if (!periodo) {
-                container.innerHTML = '<div class="empty">Selecciona un período</div>';
-                return;
-            }
+            let totalCargos = 0, totalAbonos = 0;
             
-            const [año, mes] = periodo.split('-');
-            const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-            const mesNombre = meses[parseInt(mes) - 1];
+            filtradas.forEach(p => {
+                const detalles = POLIZAS_DETALLES.filter(d => d.poliza_id === p.id && d.cuenta_id === cuentaId);
+                detalles.forEach(d => {
+                    const fecha = new Date(p.fecha).toLocaleDateString('es-MX');
+                    const cargo = d.tipo_movimiento === 'cargo' ? d.monto : 0;
+                    const abono = d.tipo_movimiento === 'abono' ? d.monto : 0;
+                    totalCargos += cargo;
+                    totalAbonos += abono;
+                    
+                    html += `<tr>
+                        <td>${fecha}</td><td>${p.tipo}</td><td>${p.numero}</td>
+                        <td>${d.concepto}</td><td>${p.referencia || '-'}</td>
+                        <td class="text-right num-val">${cargo > 0 ? cargo.toFixed(2) : ''}</td>
+                        <td class="text-right num-val">${abono > 0 ? abono.toFixed(2) : ''}</td>
+                    </tr>`;
+                });
+            });
             
-            let html = `
-                <div class="report-header">
-                    <h2>⚖️ BALANZA DE COMPROBACIÓN</h2>
-                    <p>CONTPAQ i | Amir Tafreshi</p>
-                    <p>Al ${mes}/${año}</p>
-                </div>
-                <div class="tbl-wrap">
-                    <table class="report">
-                        <thead>
-                            <tr>
-                                <th>Cuenta</th>
-                                <th>Nombre</th>
-                                <th style="text-align:right">Saldo Inicial Deudor</th>
-                                <th style="text-align:right">Saldo Inicial Acreedor</th>
-                                <th style="text-align:right">Cargos</th>
-                                <th style="text-align:right">Abonos</th>
-                                <th style="text-align:right">Saldo Final Deudor</th>
-                                <th style="text-align:right">Saldo Final Acreedor</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+            html += `<tr class="total-row">
+                <td colspan="5">TOTAL</td>
+                <td class="text-right" style="color:#fff">${totalCargos.toFixed(2)}</td>
+                <td class="text-right" style="color:#fff">${totalAbonos.toFixed(2)}</td>
+            </tr></tbody></table></div>`;
+        } else {
+            const cuentasConMov = [...new Set(POLIZAS_DETALLES.filter(d => filtradas.some(p => p.id === d.poliza_id)).map(d => d.cuenta_id))];
             
-            let sumDeudorIni = 0, sumAcreedorIni = 0, sumCargos = 0, sumAbonos = 0, sumDeudorFin = 0, sumAcreedorFin = 0;
-            
-            datosAmir.catalogo.sort((a, b) => a.codigo.localeCompare(b.codigo)).forEach(c => {
-                const detalles = datosAmir.polizasDetalles.filter(d => {
-                    const p = datosAmir.polizas.find(pol => pol.id === d.poliza_id);
+            cuentasConMov.forEach(ctaId => {
+                const cuenta = CATALOGO.find(c => c.id === ctaId);
+                html += `<div class="cuenta-header">${cuenta.codigo} - ${cuenta.nombre}</div>`;
+                html += `<div class="tbl-wrap"><table class="report"><thead><tr>
+                    <th>Fecha</th><th>Tipo</th><th>Número</th><th>Concepto</th>
+                    <th style="text-align:right">Cargos</th><th style="text-align:right">Abonos</th>
+                </tr></thead><tbody>`;
+                
+                let totalCargos = 0, totalAbonos = 0;
+                const detalles = POLIZAS_DETALLES.filter(d => d.cuenta_id === ctaId && filtradas.some(p => p.id === d.poliza_id));
+                
+                detalles.forEach(d => {
+                    const p = POLIZAS.find(pol => pol.id === d.poliza_id);
+                    const fecha = new Date(p.fecha).toLocaleDateString('es-MX');
+                    const cargo = d.tipo_movimiento === 'cargo' ? d.monto : 0;
+                    const abono = d.tipo_movimiento === 'abono' ? d.monto : 0;
+                    totalCargos += cargo;
+                    totalAbonos += abono;
+                    
+                    html += `<tr>
+                        <td>${fecha}</td><td>${p.tipo}</td><td>${p.numero}</td>
+                        <td>${d.concepto}</td>
+                        <td class="text-right num-val">${cargo > 0 ? cargo.toFixed(2) : ''}</td>
+                        <td class="text-right num-val">${abono > 0 ? abono.toFixed(2) : ''}</td>
+                    </tr>`;
+                });
+                
+                html += `<tr class="subtotal-row">
+                    <td colspan="3">SUBTOTAL</td>
+                    <td class="text-right">${totalCargos.toFixed(2)}</td>
+                    <td class="text-right">${totalAbonos.toFixed(2)}</td>
+                </tr></tbody></table></div>`;
+            });
+        }
+        
+        container.innerHTML = html;
+    }
+    
+    function generarBalanza() {
+        const container = document.getElementById('balanza-report');
+        const periodo = document.getElementById('filter-balanza-periodo').value;
+        
+        if (!periodo) {
+            container.innerHTML = '<div class="empty">Selecciona un período</div>';
+            return;
+        }
+        
+        const [año, mes] = periodo.split('-');
+        
+        let html = `
+            <div class="report-header">
+                <h2>⚖️ BALANZA DE COMPROBACIÓN</h2>
+                <p>CONTPAQ i | Amir Tafreshi</p>
+                <p>Al ${parseInt(mes)}/${año}</p>
+            </div>
+            <div class="tbl-wrap">
+                <table class="report">
+                    <thead>
+                        <tr>
+                            <th>Cuenta</th><th>Nombre</th>
+                            <th style="text-align:right">S.I. Deudor</th><th style="text-align:right">S.I. Acreedor</th>
+                            <th style="text-align:right">Cargos</th><th style="text-align:right">Abonos</th>
+                            <th style="text-align:right">S.F. Deudor</th><th style="text-align:right">S.F. Acreedor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        let sumDeudorIni = 0, sumAcreedorIni = 0, sumCargos = 0, sumAbonos = 0, sumDeudorFin = 0, sumAcreedorFin = 0;
+        
+        CATALOGO.filter(c => c.tipo !== 'ingreso' && c.tipo !== 'costo' && c.tipo !== 'gasto' && c.tipo !== 'financiero')
+            .sort((a, b) => a.codigo.localeCompare(b.codigo))
+            .forEach(c => {
+                const detalles = POLIZAS_DETALLES.filter(d => {
+                    const p = POLIZAS.find(pol => pol.id === d.poliza_id);
                     return d.cuenta_id === c.id && p && new Date(p.fecha).toISOString().slice(0, 7) === periodo;
                 });
                 
@@ -483,8 +461,7 @@
                 sumAcreedorFin += saldoFinAcreedor;
                 
                 html += `<tr>
-                    <td>${c.codigo}</td>
-                    <td>${c.nombre}</td>
+                    <td>${c.codigo}</td><td>${c.nombre}</td>
                     <td class="text-right num-val">${saldoIniDeudor > 0 ? saldoIniDeudor.toFixed(2) : ''}</td>
                     <td class="text-right num-val">${saldoIniAcreedor > 0 ? saldoIniAcreedor.toFixed(2) : ''}</td>
                     <td class="text-right num-val">${cargos > 0 ? cargos.toFixed(2) : ''}</td>
@@ -493,290 +470,273 @@
                     <td class="text-right num-val">${saldoFinAcreedor > 0 ? saldoFinAcreedor.toFixed(2) : ''}</td>
                 </tr>`;
             });
-            
-            html += `
-                        <tr class="total-row">
-                            <td colspan="2">SUMAS IGUALES</td>
-                            <td class="text-right" style="color:#fff">${sumDeudorIni.toFixed(2)}</td>
-                            <td class="text-right" style="color:#fff">${sumAcreedorIni.toFixed(2)}</td>
-                            <td class="text-right" style="color:#fff">${sumCargos.toFixed(2)}</td>
-                            <td class="text-right" style="color:#fff">${sumAbonos.toFixed(2)}</td>
-                            <td class="text-right" style="color:#fff">${sumDeudorFin.toFixed(2)}</td>
-                            <td class="text-right" style="color:#fff">${sumAcreedorFin.toFixed(2)}</td>
-                        </tr>
+        
+        html += `
+                    <tr class="total-row">
+                        <td colspan="2">SUMAS IGUALES</td>
+                        <td class="text-right" style="color:#fff">${sumDeudorIni.toFixed(2)}</td>
+                        <td class="text-right" style="color:#fff">${sumAcreedorIni.toFixed(2)}</td>
+                        <td class="text-right" style="color:#fff">${sumCargos.toFixed(2)}</td>
+                        <td class="text-right" style="color:#fff">${sumAbonos.toFixed(2)}</td>
+                        <td class="text-right" style="color:#fff">${sumDeudorFin.toFixed(2)}</td>
+                        <td class="text-right" style="color:#fff">${sumAcreedorFin.toFixed(2)}</td>
+                    </tr>
                     </tbody>
-                    </table>
-                </div>
-            `;
-            
-            container.innerHTML = html;
+                </table>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+    }
+    
+    function generarResultados() {
+        const container = document.getElementById('resultados-report');
+        const periodo = document.getElementById('filter-resultados-periodo').value;
+        
+        if (!periodo) {
+            container.innerHTML = '<div class="empty">Selecciona un período</div>';
+            return;
         }
         
-        function generarResultados() {
-            const container = document.getElementById('resultados-report');
-            const periodo = document.getElementById('filter-resultados-periodo').value;
-            
-            if (!periodo) {
-                container.innerHTML = '<div class="empty">Selecciona un período</div>';
-                return;
-            }
-            
-            const [año, mes] = periodo.split('-');
-            
-            let html = `
-                <div class="report-header">
-                    <h2>📈 ESTADO DE RESULTADOS</h2>
-                    <p>CONTPAQ i | Amir Tafreshi</p>
-                    <p>Del 01/${mes}/${año} al ${new Date(año, mes, 0).getDate()}/${mes}/${año}</p>
-                </div>
-            `;
-            
-            const ingresos = datosAmir.catalogo.filter(c => c.tipo === 'ingreso');
-            const costos = datosAmir.catalogo.filter(c => c.tipo === 'costo');
-            const gastos = datosAmir.catalogo.filter(c => c.tipo === 'gasto');
-            const financiero = datosAmir.catalogo.filter(c => c.tipo === 'financiero');
-            
-            let totalIngreso = 0, totalCosto = 0, totalGasto = 0, totalFinanciero = 0;
-            
-            const calcularMonto = (ctaId) => {
-                return datosAmir.polizasDetalles.filter(d => {
-                    const p = datosAmir.polizas.find(pol => pol.id === d.poliza_id);
-                    return d.cuenta_id === ctaId && p && new Date(p.fecha).toISOString().slice(0, 7) === periodo;
-                }).reduce((s, d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
-            };
-            
-            html += '<div class="er-section">';
-            html += '<div class="er-section-title">INGRESOS</div>';
-            ingresos.forEach(c => {
-                const monto = calcularMonto(c.id);
-                totalIngreso += monto;
-                html += `<div class="er-line">
-                    <span class="er-line-label">${c.nombre}</span>
-                    <span class="er-line-value">${monto.toFixed(2)}</span>
-                </div>`;
-            });
-            html += `<div class="er-line total">
+        const [año, mes] = periodo.split('-');
+        
+        let html = `
+            <div class="report-header">
+                <h2>📈 ESTADO DE RESULTADOS</h2>
+                <p>CONTPAQ i | Amir Tafreshi</p>
+                <p>Del 01/${mes}/${año} al 30/${mes}/${año}</p>
+            </div>
+        `;
+        
+        const calcularMonto = (tiposCta) => {
+            return POLIZAS_DETALLES.filter(d => {
+                const p = POLIZAS.find(pol => pol.id === d.poliza_id);
+                const cta = CATALOGO.find(c => c.id === d.cuenta_id);
+                return tiposCta.includes(cta.tipo) && p && new Date(p.fecha).toISOString().slice(0, 7) === periodo;
+            }).reduce((s, d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
+        };
+        
+        const ingresos = calcularMonto(['ingreso']);
+        const costos = calcularMonto(['costo']);
+        const gastos = calcularMonto(['gasto']);
+        const financiero = calcularMonto(['financiero']);
+        
+        const utilidadBruta = ingresos - costos;
+        const resultadoNeto = utilidadBruta - gastos + financiero;
+        
+        html += `<div class="er-section">
+            <div class="er-section-title">INGRESOS</div>
+            <div class="er-line">
+                <span class="er-line-label">Ingresos por Servicios</span>
+                <span class="er-line-value">${ingresos.toFixed(2)}</span>
+            </div>
+            <div class="er-line total">
                 <span>Total Ingresos</span>
-                <span>${totalIngreso.toFixed(2)}</span>
-            </div></div>`;
-            
-            html += '<div class="er-section">';
-            html += '<div class="er-section-title">COSTOS</div>';
-            costos.forEach(c => {
-                const monto = calcularMonto(c.id);
-                totalCosto += monto;
-                html += `<div class="er-line">
-                    <span class="er-line-label">${c.nombre}</span>
-                    <span class="er-line-value">${monto.toFixed(2)}</span>
-                </div>`;
-            });
-            const utilidadBruta = totalIngreso - totalCosto;
-            html += `<div class="er-line total">
+                <span>${ingresos.toFixed(2)}</span>
+            </div>
+        </div>`;
+        
+        html += `<div class="er-section">
+            <div class="er-section-title">COSTOS</div>
+            <div class="er-line">
+                <span class="er-line-label">Costo de Servicios</span>
+                <span class="er-line-value">${costos.toFixed(2)}</span>
+            </div>
+            <div class="er-line total">
                 <span>Total Costos</span>
-                <span>${totalCosto.toFixed(2)}</span>
+                <span>${costos.toFixed(2)}</span>
             </div>
             <div class="er-line total" style="background:#334155">
                 <span>Utilidad Bruta</span>
                 <span>${utilidadBruta.toFixed(2)}</span>
-            </div></div>`;
-            
-            html += '<div class="er-section">';
-            html += '<div class="er-section-title">GASTOS</div>';
-            gastos.forEach(c => {
-                const monto = calcularMonto(c.id);
-                totalGasto += monto;
-                html += `<div class="er-line">
-                    <span class="er-line-label">${c.nombre}</span>
-                    <span class="er-line-value">${monto.toFixed(2)}</span>
-                </div>`;
-            });
-            html += `<div class="er-line total">
+            </div>
+        </div>`;
+        
+        html += `<div class="er-section">
+            <div class="er-section-title">GASTOS</div>
+            <div class="er-line">
+                <span class="er-line-label">Gastos Generales</span>
+                <span class="er-line-value">${gastos.toFixed(2)}</span>
+            </div>
+            <div class="er-line total">
                 <span>Total Gastos</span>
-                <span>${totalGasto.toFixed(2)}</span>
-            </div></div>`;
-            
-            html += '<div class="er-section">';
-            html += '<div class="er-section-title">RESULTADO INTEGRAL DE FINANCIAMIENTO</div>';
-            financiero.forEach(c => {
-                const monto = calcularMonto(c.id);
-                totalFinanciero += monto;
-                html += `<div class="er-line">
-                    <span class="er-line-label">${c.nombre}</span>
-                    <span class="er-line-value">${monto.toFixed(2)}</span>
-                </div>`;
-            });
-            html += `<div class="er-line total">
+                <span>${gastos.toFixed(2)}</span>
+            </div>
+        </div>`;
+        
+        html += `<div class="er-section">
+            <div class="er-section-title">RESULTADO INTEGRAL DE FINANCIAMIENTO</div>
+            <div class="er-line">
+                <span class="er-line-label">Gastos Financieros</span>
+                <span class="er-line-value">${financiero.toFixed(2)}</span>
+            </div>
+            <div class="er-line total">
                 <span>Total Financiero</span>
-                <span>${totalFinanciero.toFixed(2)}</span>
-            </div></div>`;
-            
-            const resultadoNeto = utilidadBruta - totalGasto + totalFinanciero;
-            html += `
-                <div class="er-section">
-                    <div class="er-line result">
-                        <span>${resultadoNeto >= 0 ? '✓ UTILIDAD DEL EJERCICIO' : '✗ PÉRDIDA DEL EJERCICIO'}</span>
-                        <span class="${resultadoNeto >= 0 ? 'positivo' : 'negativo'}">${resultadoNeto.toFixed(2)}</span>
-                    </div>
-                </div>
-            `;
-            
-            container.innerHTML = html;
+                <span>${financiero.toFixed(2)}</span>
+            </div>
+        </div>`;
+        
+        html += `<div class="er-section">
+            <div class="er-line result">
+                <span>${resultadoNeto >= 0 ? '✓ UTILIDAD DEL EJERCICIO' : '✗ PÉRDIDA DEL EJERCICIO'}</span>
+                <span>${resultadoNeto.toFixed(2)}</span>
+            </div>
+        </div>`;
+        
+        container.innerHTML = html;
+    }
+    
+    function generarBalance() {
+        const container = document.getElementById('balance-report');
+        const fecha = document.getElementById('filter-balance-fecha').value;
+        
+        if (!fecha) {
+            container.innerHTML = '<div class="empty">Selecciona una fecha</div>';
+            return;
         }
         
-        function generarBalance() {
-            const container = document.getElementById('balance-report');
-            const fecha = document.getElementById('filter-balance-fecha').value;
-            
-            if (!fecha) {
-                container.innerHTML = '<div class="empty">Selecciona una fecha</div>';
-                return;
-            }
-            
-            let html = `
-                <div class="report-header">
-                    <h2>🏦 POSICIÓN FINANCIERA - BALANCE GENERAL</h2>
-                    <p>CONTPAQ i | Amir Tafreshi</p>
-                    <p>Al ${new Date(fecha).toLocaleDateString('es-MX')}</p>
-                </div>
-            `;
-            
-            const activos = datosAmir.catalogo.filter(c => c.tipo === 'activo');
-            const pasivos = datosAmir.catalogo.filter(c => c.tipo === 'pasivo');
-            const capital = datosAmir.catalogo.filter(c => c.tipo === 'capital');
-            
-            const calcularSaldo = (ctaId) => {
-                const inicial = datosAmir.catalogo.find(c => c.id === ctaId)?.saldo_inicial || 0;
-                const movimientos = datosAmir.polizasDetalles.filter(d => {
-                    const p = datosAmir.polizas.find(pol => pol.id === d.poliza_id);
-                    return d.cuenta_id === ctaId && p && new Date(p.fecha) <= new Date(fecha);
-                }).reduce((s, d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
-                return inicial + movimientos;
-            };
-            
-            html += '<div class="balance-container">';
-            
-            // ACTIVOS
-            html += '<div class="balance-side">';
-            html += '<h3>ACTIVO</h3>';
-            let totalActivos = 0;
-            activos.forEach(c => {
-                const saldo = calcularSaldo(c.id);
+        let html = `
+            <div class="report-header">
+                <h2>🏦 POSICIÓN FINANCIERA - BALANCE GENERAL</h2>
+                <p>CONTPAQ i | Amir Tafreshi</p>
+                <p>Al ${new Date(fecha).toLocaleDateString('es-MX')}</p>
+            </div>
+        `;
+        
+        const calcularSaldo = (ctaId) => {
+            const ini = CATALOGO.find(c => c.id === ctaId).saldo_inicial;
+            const movs = POLIZAS_DETALLES.filter(d => {
+                const p = POLIZAS.find(pol => pol.id === d.poliza_id);
+                return d.cuenta_id === ctaId && p && new Date(p.fecha) <= new Date(fecha);
+            }).reduce((s, d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
+            return ini + movs;
+        };
+        
+        html += '<div class="balance-container">';
+        
+        // ACTIVOS
+        html += '<div class="balance-side"><h3>ACTIVO</h3>';
+        let totalActivos = 0;
+        CATALOGO.filter(c => c.tipo === 'activo').forEach(c => {
+            const saldo = calcularSaldo(c.id);
+            if (Math.abs(saldo) > 0.01) {
                 totalActivos += saldo;
                 html += `<div class="balance-item child">
                     <span>${c.nombre}</span>
                     <span class="balance-amount">${saldo.toFixed(2)}</span>
                 </div>`;
-            });
-            html += `<div class="balance-item-main">
-                <span>TOTAL ACTIVO</span>
-                <span class="balance-amount">${totalActivos.toFixed(2)}</span>
-            </div>`;
-            html += '</div>';
-            
-            // PASIVO + CAPITAL
-            html += '<div class="balance-side">';
-            html += '<h3>PASIVO</h3>';
-            let totalPasivos = 0;
-            pasivos.forEach(c => {
-                const saldo = calcularSaldo(c.id);
+            }
+        });
+        html += `<div class="balance-item-main">
+            <span>TOTAL ACTIVO</span>
+            <span class="balance-amount">${totalActivos.toFixed(2)}</span>
+        </div></div>`;
+        
+        // PASIVO + CAPITAL
+        html += '<div class="balance-side"><h3>PASIVO</h3>';
+        let totalPasivos = 0;
+        CATALOGO.filter(c => c.tipo === 'pasivo').forEach(c => {
+            const saldo = calcularSaldo(c.id);
+            if (Math.abs(saldo) > 0.01) {
                 totalPasivos += Math.abs(saldo);
                 html += `<div class="balance-item child">
                     <span>${c.nombre}</span>
                     <span class="balance-amount">${Math.abs(saldo).toFixed(2)}</span>
                 </div>`;
-            });
-            html += `<div class="balance-item-main">
-                <span>TOTAL PASIVO</span>
-                <span class="balance-amount">${totalPasivos.toFixed(2)}</span>
-            </div>`;
-            
-            html += '<h3 style="margin-top:16px">CAPITAL</h3>';
-            let totalCapital = 0;
-            capital.forEach(c => {
-                const saldo = calcularSaldo(c.id);
+            }
+        });
+        html += `<div class="balance-item-main">
+            <span>TOTAL PASIVO</span>
+            <span class="balance-amount">${totalPasivos.toFixed(2)}</span>
+        </div>`;
+        
+        html += '<h3 style="margin-top:16px">CAPITAL</h3>';
+        let totalCapital = 0;
+        CATALOGO.filter(c => c.tipo === 'capital').forEach(c => {
+            const saldo = calcularSaldo(c.id);
+            if (Math.abs(saldo) > 0.01) {
                 totalCapital += saldo;
                 html += `<div class="balance-item child">
                     <span>${c.nombre}</span>
                     <span class="balance-amount">${saldo.toFixed(2)}</span>
                 </div>`;
-            });
-            html += `<div class="balance-item-main">
-                <span>TOTAL CAPITAL</span>
-                <span class="balance-amount">${totalCapital.toFixed(2)}</span>
-            </div>`;
-            
-            const sumaPyC = totalPasivos + totalCapital;
-            html += `<div class="balance-item-main" style="margin-top:8px;border-top:2px solid #475569">
-                <span>SUMA PASIVO + CAPITAL</span>
-                <span class="balance-amount">${sumaPyC.toFixed(2)}</span>
-            </div>`;
-            
-            html += '</div></div>';
-            
-            container.innerHTML = html;
-        }
-        
-        function exportarAuxiliar(tipo) {
-            const periodo = document.getElementById('filter-auxiliar-periodo').value;
-            const nombreArchivo = `Auxiliar_Libro_Mayor_${periodo}.${tipo === 'xlsx' ? 'xlsx' : 'pdf'}`;
-            mostrarMsg('auxiliar', `Exportando a ${tipo.toUpperCase()}...`, 'info');
-        }
-        
-        function exportarBalanza(tipo) {
-            const periodo = document.getElementById('filter-balanza-periodo').value;
-            const nombreArchivo = `Balanza_Comprobacion_${periodo}.${tipo === 'xlsx' ? 'xlsx' : 'pdf'}`;
-            mostrarMsg('balanza', `Exportando a ${tipo.toUpperCase()}...`, 'info');
-        }
-        
-        function exportarResultados(tipo) {
-            const periodo = document.getElementById('filter-resultados-periodo').value;
-            const nombreArchivo = `Estado_Resultados_${periodo}.${tipo === 'xlsx' ? 'xlsx' : 'pdf'}`;
-            mostrarMsg('resultados', `Exportando a ${tipo.toUpperCase()}...`, 'info');
-        }
-        
-        function exportarBalance(tipo) {
-            const fecha = document.getElementById('filter-balance-fecha').value;
-            const nombreArchivo = `Balance_General_${fecha}.${tipo === 'xlsx' ? 'xlsx' : 'pdf'}`;
-            mostrarMsg('balance', `Exportando a ${tipo.toUpperCase()}...`, 'info');
-        }
-        
-        function setView(viewName) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById('view-' + viewName).classList.add('active');
-            
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            if (viewName === 'auxiliar') generarAuxiliar();
-            else if (viewName === 'balanza') generarBalanza();
-            else if (viewName === 'resultados') generarResultados();
-            else if (viewName === 'balance') generarBalance();
-        }
-        
-        function mostrarMsg(view, texto, tipo) {
-            const msg = document.getElementById(`msg-${view}`);
-            if (msg) {
-                msg.textContent = texto;
-                msg.className = `msg show ${tipo}`;
-                if (tipo === 'success') setTimeout(() => msg.classList.remove('show'), 3000);
             }
-        }
+        });
+        html += `<div class="balance-item-main">
+            <span>TOTAL CAPITAL</span>
+            <span class="balance-amount">${totalCapital.toFixed(2)}</span>
+        </div>`;
         
-        // Inicializar al cargar
-        window.addEventListener('load', inicializar);
+        const sumaPyC = totalPasivos + totalCapital;
+        html += `<div class="balance-item-main" style="margin-top:8px;border-top:2px solid #475569">
+            <span>SUMA PASIVO + CAPITAL</span>
+            <span class="balance-amount">${sumaPyC.toFixed(2)}</span>
+        </div></div></div>`;
         
-        // Export functions globales
-        window.generarAuxiliar = generarAuxiliar;
-        window.generarBalanza = generarBalanza;
-        window.generarResultados = generarResultados;
-        window.generarBalance = generarBalance;
-        window.exportarAuxiliar = exportarAuxiliar;
-        window.exportarBalanza = exportarBalanza;
-        window.exportarResultados = exportarResultados;
-        window.exportarBalance = exportarBalance;
-        window.setView = setView;
-        window.mostrarMsg = mostrarMsg;
-    })();
+        container.innerHTML = html;
+    }
+    
+    function setView(viewName) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById('view-' + viewName).classList.add('active');
+        
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if (viewName === 'auxiliar') generarAuxiliar();
+        else if (viewName === 'balanza') generarBalanza();
+        else if (viewName === 'resultados') generarResultados();
+        else if (viewName === 'balance') generarBalance();
+    }
+    
+    function exportarAuxiliar() {
+        const periodo = document.getElementById('filter-auxiliar-periodo').value;
+        const ws = XLSX.utils.aoa_to_sheet([['Auxiliar Libro Mayor', periodo]]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws);
+        XLSX.writeFile(wb, `Auxiliar_${periodo}.xlsx`);
+    }
+    
+    function exportarBalanza() {
+        const periodo = document.getElementById('filter-balanza-periodo').value;
+        const ws = XLSX.utils.aoa_to_sheet([['Balanza de Comprobación', periodo]]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws);
+        XLSX.writeFile(wb, `Balanza_${periodo}.xlsx`);
+    }
+    
+    function exportarResultados() {
+        const periodo = document.getElementById('filter-resultados-periodo').value;
+        const ws = XLSX.utils.aoa_to_sheet([['Estado de Resultados', periodo]]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws);
+        XLSX.writeFile(wb, `Resultados_${periodo}.xlsx`);
+    }
+    
+    function exportarBalance() {
+        const fecha = document.getElementById('filter-balance-fecha').value;
+        const ws = XLSX.utils.aoa_to_sheet([['Balance General', fecha]]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws);
+        XLSX.writeFile(wb, `Balance_${fecha}.xlsx`);
+    }
+    
+    window.generarAuxiliar = generarAuxiliar;
+    window.generarBalanza = generarBalanza;
+    window.generarResultados = generarResultados;
+    window.generarBalance = generarBalance;
+    window.exportarAuxiliar = exportarAuxiliar;
+    window.exportarBalanza = exportarBalanza;
+    window.exportarResultados = exportarResultados;
+    window.exportarBalance = exportarBalance;
+    window.setView = setView;
+    
+    window.addEventListener('load', () => {
+        generarMovimientos();
+        llenarFiltros();
+        generarAuxiliar();
+    });
+})();
 </script>
 
 </body>
