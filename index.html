@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIF-Amir | Servicios de Renta</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --azul-marino: #003D7A;
@@ -20,1313 +21,829 @@
             --gris-etiqueta: #64748B;
             --gris-subtotal: #CBD5E1;
         }
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--gris-tenue);
-            color: var(--gris-oscuro);
-            padding: 20px;
-        }
-        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--gris-tenue); color: var(--gris-oscuro); padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
-        
-        header {
-            background: var(--azul-marino);
-            color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        
+        header { background: var(--azul-marino); color: #fff; padding: 30px; border-radius: 8px; margin-bottom: 30px; text-align: center; }
         header h1 { font-size: 24px; margin-bottom: 5px; }
         header p { font-size: 13px; opacity: 0.9; }
-        
         .nav-container { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-        .nav-btn {
-            padding: 10px 16px;
-            background: var(--gris-borde);
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--gris-oscuro);
-            transition: all 0.2s;
-        }
+        .nav-btn { padding: 10px 16px; background: var(--gris-borde); border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--gris-oscuro); transition: all 0.2s; }
         .nav-btn:hover { background: var(--azul-claro); color: var(--azul-marino); }
         .nav-btn.active { background: var(--azul-marino); color: #fff; }
-        
         .view { display: none; }
         .view.active { display: block; }
-        
-        .report-header {
-            background: var(--azul-marino);
-            color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
+        .report-header { background: var(--azul-marino); color: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         .report-header h2 { font-size: 18px; margin-bottom: 5px; }
         .report-header p { font-size: 12px; opacity: 0.9; }
-        
-        .filters {
-            background: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-            border: 1px solid var(--gris-borde);
-        }
+        .filters { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; border: 1px solid var(--gris-borde); }
         .filters label { font-size: 11px; font-weight: 600; color: var(--gris-medio); }
-        .filters input,
-        .filters select { 
-            padding: 6px 10px; 
-            border: 1px solid var(--gris-borde); 
-            border-radius: 4px;
-            font-size: 12px;
-        }
-        
-        .btn {
-            padding: 8px 14px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-        }
+        .filters input, .filters select { padding: 6px 10px; border: 1px solid var(--gris-borde); border-radius: 4px; font-size: 12px; }
+        .btn { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
         .btn-primary { background: var(--azul-ejecutivo); color: #fff; }
         .btn-primary:hover { opacity: 0.9; }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fff;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-        
-        thead {
-            background: var(--azul-claro);
-            color: var(--gris-oscuro);
-            font-weight: 600;
-            font-size: 12px;
-            height: 24px;
-        }
-        
-        th, td { padding: 8px 10px; text-align: left; }
-        
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+        thead { background: var(--azul-claro); color: var(--gris-oscuro); font-weight: 600; font-size: 12px; }
+        th, td { padding: 8px 10px; text-align: left; font-size: 12px; }
         tbody tr:nth-child(even) { background: var(--gris-tenue); }
         tbody tr:nth-child(odd) { background: #fff; }
-        
-        td.num {
-            text-align: right;
-            font-family: 'Courier New', monospace;
-            color: var(--gris-datos);
-        }
-        
+        td.num { text-align: right; font-family: 'Courier New', monospace; color: var(--gris-datos); }
         td.num-negative { color: var(--rojo-negativo); font-weight: 600; }
         td.num-zero { color: var(--gris-etiqueta); }
-        
-        .subtotal-row td {
-            background: var(--gris-datos);
-            color: var(--gris-subtotal);
-            font-weight: 600;
-            border-top: 1px solid var(--gris-datos);
-            border-bottom: 1px solid var(--gris-datos);
-            height: 22px;
-        }
-        .subtotal-row td.num-negative { color: var(--rojo-negativo); }
-        
-        .total-row td {
-            background: var(--azul-ejecutivo);
-            color: #fff;
-            font-weight: 700;
-            border-top: 2px solid var(--azul-ejecutivo);
-            border-bottom: 2px solid var(--azul-ejecutivo);
-            height: 22px;
-        }
-        .total-row td.num-negative { color: var(--rojo-negativo); }
-        
-        .section {
-            background: #fff;
-            border-left: 4px solid var(--azul-ejecutivo);
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 6px;
-        }
-        
-        .section-title {
-            font-weight: 700;
-            color: var(--azul-marino);
-            font-size: 12px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .section-line {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            font-size: 12px;
-        }
-        
+        .subtotal-row td { background: var(--gris-datos); color: var(--gris-subtotal); font-weight: 600; border-top: 1px solid var(--gris-datos); }
+        .total-row td { background: var(--azul-ejecutivo); color: #fff; font-weight: 700; }
+        .section { background: #fff; border-left: 4px solid var(--azul-ejecutivo); padding: 15px; margin-bottom: 15px; border-radius: 6px; }
+        .section-title { font-weight: 700; color: var(--azul-marino); font-size: 12px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-line { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; }
         .section-line-label { color: var(--gris-medio); }
         .section-line-value { font-family: 'Courier New', monospace; text-align: right; }
-        
-        .empty { text-align: center; padding: 30px; color: var(--gris-etiqueta); }
-        
-        .balance-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .balance-side {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid var(--gris-borde);
-        }
-        
-        .balance-side h3 {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--azul-marino);
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid var(--azul-claro);
-        }
-        
-        .balance-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 12px;
-            border-bottom: 1px solid var(--gris-borde);
-        }
-        
-        .balance-item.child {
-            padding-left: 20px;
-            color: var(--gris-medio);
-        }
-        
-        .balance-total {
-            background: var(--azul-claro);
-            padding: 10px;
-            margin-top: 8px;
-            border-radius: 4px;
-            font-weight: 600;
-            color: var(--azul-marino);
-            border: none;
-        }
-        
-        .balance-amount {
-            font-family: 'Courier New', monospace;
-            text-align: right;
-        }
-        
-        footer {
-            text-align: center;
-            padding: 20px;
-            font-size: 11px;
-            color: var(--gris-etiqueta);
-            margin-top: 30px;
-        }
-        
-        @media (max-width: 768px) {
-            .balance-container { grid-template-columns: 1fr; }
-            .filters { flex-direction: column; align-items: stretch; }
-            .filters input, .filters select { width: 100%; }
-        }
+        .empty { text-align: center; padding: 30px; color: var(--gris-etiqueta); font-size: 13px; }
+        .loading { text-align: center; padding: 30px; color: var(--azul-ejecutivo); font-size: 13px; }
+        .balance-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .balance-side { background: #fff; padding: 20px; border-radius: 8px; border: 1px solid var(--gris-borde); }
+        .balance-side h3 { font-size: 13px; font-weight: 700; color: var(--azul-marino); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--azul-claro); }
+        .balance-item { display: flex; justify-content: space-between; padding: 8px 0; font-size: 12px; border-bottom: 1px solid var(--gris-borde); }
+        .balance-item.child { padding-left: 20px; color: var(--gris-medio); }
+        .balance-total { background: var(--azul-claro); padding: 10px; margin-top: 8px; border-radius: 4px; font-weight: 600; color: var(--azul-marino); border: none; display: flex; justify-content: space-between; }
+        .balance-amount { font-family: 'Courier New', monospace; text-align: right; }
+        footer { text-align: center; padding: 20px; font-size: 11px; color: var(--gris-etiqueta); margin-top: 30px; }
+        @media (max-width: 768px) { .balance-container { grid-template-columns: 1fr; } .filters { flex-direction: column; align-items: stretch; } }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🏢 SIF-AMIR | SERVICIOS DE RENTA</h1>
-            <p>Contabilidad NIF México | Sistema Perpetuo de Inventarios | Persona Física</p>
-        </header>
-        
-        <div class="nav-container">
-            <button class="nav-btn" onclick="setView('polizas')">📝 Pólizas</button>
-            <button class="nav-btn active" onclick="setView('auxiliar')">📋 Auxiliar</button>
-            <button class="nav-btn" onclick="setView('balanza')">⚖️ Balanza</button>
-            <button class="nav-btn" onclick="setView('resultados')">📈 Estado Resultados</button>
-            <button class="nav-btn" onclick="setView('balance')">🏦 Balance General</button>
+<div class="container">
+    <header>
+        <h1>🏢 SIF-AMIR | SERVICIOS DE RENTA</h1>
+        <p>Contabilidad NIF México | Sistema Perpetuo de Inventarios | Persona Física</p>
+    </header>
+
+    <div class="nav-container">
+        <button class="nav-btn active" onclick="setView('polizas')">📝 Pólizas</button>
+        <button class="nav-btn" onclick="setView('auxiliar')">📋 Auxiliar</button>
+        <button class="nav-btn" onclick="setView('balanza')">⚖️ Balanza</button>
+        <button class="nav-btn" onclick="setView('resultados')">📈 Resultados</button>
+        <button class="nav-btn" onclick="setView('balance')">🏦 Balance</button>
+    </div>
+
+    <!-- PÓLIZAS -->
+    <div id="view-polizas" class="view active">
+        <div class="report-header">
+            <h2>📝 CAPTURA DE PÓLIZAS</h2>
+            <p>Catálogo Amir · Solo cuentas de registro (Nivel 4 y 5) · Partida doble estricta</p>
         </div>
-        
-        <!-- PÓLIZAS CONTABLES -->
-        <div id="view-polizas" class="view">
-            <div class="report-header">
-                <h2>📝 CAPTURA DE PÓLIZAS</h2>
-                <p>Solo cuentas Nivel 4 y 5 · Partida doble estricta · NIF</p>
-            </div>
-
-            <!-- Encabezado de la póliza -->
-            <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px;margin-bottom:12px">
-                <div style="display:grid;grid-template-columns:120px 160px 1fr auto;gap:12px;align-items:end">
-                    <div>
-                        <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">TIPO</label>
-                        <select id="pol-tipo" style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px">
-                            <option value="ING">ING – Ingreso</option>
-                            <option value="EGR">EGR – Egreso</option>
-                            <option value="DIA">DIA – Diario</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">FECHA</label>
-                        <input type="date" id="pol-fecha" style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px">
-                    </div>
-                    <div>
-                        <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">CONCEPTO</label>
-                        <input type="text" id="pol-concepto" placeholder="Descripción de la póliza…" style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px">
-                    </div>
-                    <div>
-                        <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">FOLIO</label>
-                        <input type="text" id="pol-folio" readonly style="width:72px;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px;background:var(--gris-tenue);color:var(--gris-etiqueta)">
-                    </div>
+        <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px;margin-bottom:12px">
+            <div style="display:grid;grid-template-columns:130px 160px 1fr 90px;gap:12px;align-items:end">
+                <div>
+                    <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">TIPO</label>
+                    <select id="pol-tipo" onchange="actualizarFolio()" style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px">
+                        <option value="ING">ING – Ingreso</option>
+                        <option value="EGR">EGR – Egreso</option>
+                        <option value="DIA">DIA – Diario</option>
+                    </select>
                 </div>
-            </div>
-
-            <!-- Líneas de la póliza -->
-            <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px;margin-bottom:12px">
-                <div style="font-size:11px;font-weight:700;color:var(--azul-marino);margin-bottom:10px;text-transform:uppercase">Partidas</div>
-                <div id="pol-lineas">
-                    <!-- líneas dinámicas -->
+                <div>
+                    <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">FECHA</label>
+                    <input type="date" id="pol-fecha" style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px">
                 </div>
-                <button onclick="agregarLineaPoliza()" style="margin-top:8px;padding:6px 12px;background:var(--azul-claro);color:var(--azul-marino);border:1px dashed var(--azul-ejecutivo);border-radius:4px;cursor:pointer;font-size:11px;font-weight:600">+ Agregar línea</button>
-            </div>
-
-            <!-- Totales y validación -->
-            <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
-                <div style="display:flex;gap:40px">
-                    <div>
-                        <div style="font-size:10px;color:var(--gris-etiqueta);font-weight:600">TOTAL DEBE</div>
-                        <div id="pol-total-debe" style="font-family:'Courier New',monospace;font-size:16px;font-weight:700;color:var(--azul-ejecutivo)">$0</div>
-                    </div>
-                    <div>
-                        <div style="font-size:10px;color:var(--gris-etiqueta);font-weight:600">TOTAL HABER</div>
-                        <div id="pol-total-haber" style="font-family:'Courier New',monospace;font-size:16px;font-weight:700;color:var(--azul-ejecutivo)">$0</div>
-                    </div>
-                    <div>
-                        <div style="font-size:10px;color:var(--gris-etiqueta);font-weight:600">DIFERENCIA</div>
-                        <div id="pol-diferencia" style="font-family:'Courier New',monospace;font-size:16px;font-weight:700;color:var(--rojo-negativo)">$0</div>
-                    </div>
+                <div>
+                    <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">CONCEPTO</label>
+                    <input type="text" id="pol-concepto" placeholder="Descripción de la póliza…" style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px">
                 </div>
-                <div style="display:flex;gap:10px">
-                    <div id="pol-status" style="font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:var(--gris-tenue);color:var(--gris-etiqueta)">Captura en progreso</div>
-                    <button onclick="guardarPoliza()" id="btn-guardar-poliza" disabled style="padding:10px 20px;background:#94a3b8;color:#fff;border:none;border-radius:6px;cursor:not-allowed;font-size:13px;font-weight:700">💾 Guardar</button>
+                <div>
+                    <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">FOLIO</label>
+                    <input type="text" id="pol-folio" readonly style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px;background:var(--gris-tenue);color:var(--gris-etiqueta)">
                 </div>
-            </div>
-
-            <!-- Lista de pólizas registradas -->
-            <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                    <div style="font-size:11px;font-weight:700;color:var(--azul-marino);text-transform:uppercase">Pólizas Registradas</div>
-                    <input type="month" id="pol-filtro-mes" onchange="renderListaPolizas()" style="padding:5px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
-                </div>
-                <div id="pol-lista"></div>
             </div>
         </div>
 
-        <!-- AUXILIAR DEL LIBRO MAYOR -->
-        <div id="view-auxiliar" class="view active">
-            <div class="filters">
-                <label>Cuenta:</label>
-                <select id="filter-auxiliar-cuenta" onchange="generarAuxiliar()">
-                    <option value="">-- Todas --</option>
-                </select>
-                <label style="margin-left: 20px;">Período:</label>
-                <input type="month" id="filter-auxiliar-periodo" value="2026-04" onchange="generarAuxiliar()">
-                <button class="btn btn-primary" onclick="exportarAuxiliar()" style="margin-left: auto;">📥 Excel</button>
+        <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px;margin-bottom:12px">
+            <div style="font-size:11px;font-weight:700;color:var(--azul-marino);margin-bottom:10px;text-transform:uppercase">Partidas</div>
+            <div style="display:grid;grid-template-columns:1fr 110px 110px 32px;gap:6px;margin-bottom:6px;padding:0 4px">
+                <span style="font-size:10px;font-weight:600;color:var(--gris-etiqueta)">CUENTA</span>
+                <span style="font-size:10px;font-weight:600;color:var(--gris-etiqueta);text-align:right">DEBE</span>
+                <span style="font-size:10px;font-weight:600;color:var(--gris-etiqueta);text-align:right">HABER</span>
+                <span></span>
             </div>
-            <div id="auxiliar-report"></div>
+            <div id="pol-lineas"></div>
+            <button onclick="agregarLinea()" style="margin-top:8px;padding:6px 14px;background:var(--azul-claro);color:var(--azul-marino);border:1px dashed var(--azul-ejecutivo);border-radius:4px;cursor:pointer;font-size:11px;font-weight:600">+ Agregar línea</button>
         </div>
-        
-        <!-- BALANZA DE COMPROBACIÓN -->
-        <div id="view-balanza" class="view">
-            <div class="filters">
-                <label>Período:</label>
-                <input type="month" id="filter-balanza-periodo" value="2026-04" onchange="generarBalanza()">
-                <button class="btn btn-primary" onclick="exportarBalanza()" style="margin-left: auto;">📥 Excel</button>
+
+        <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;gap:40px">
+                <div>
+                    <div style="font-size:10px;color:var(--gris-etiqueta);font-weight:600">TOTAL DEBE</div>
+                    <div id="tot-debe" style="font-family:'Courier New',monospace;font-size:18px;font-weight:700;color:var(--azul-ejecutivo)">$0.00</div>
+                </div>
+                <div>
+                    <div style="font-size:10px;color:var(--gris-etiqueta);font-weight:600">TOTAL HABER</div>
+                    <div id="tot-haber" style="font-family:'Courier New',monospace;font-size:18px;font-weight:700;color:var(--azul-ejecutivo)">$0.00</div>
+                </div>
+                <div>
+                    <div style="font-size:10px;color:var(--gris-etiqueta);font-weight:600">DIFERENCIA</div>
+                    <div id="tot-diff" style="font-family:'Courier New',monospace;font-size:18px;font-weight:700;color:var(--rojo-negativo)">$0.00</div>
+                </div>
             </div>
-            <div id="balanza-report"></div>
+            <div style="display:flex;gap:10px;align-items:center">
+                <div id="pol-status" style="font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:var(--gris-tenue);color:var(--gris-etiqueta)">Captura en progreso</div>
+                <button onclick="guardarPoliza()" id="btn-guardar" disabled style="padding:10px 20px;background:#94a3b8;color:#fff;border:none;border-radius:6px;cursor:not-allowed;font-size:13px;font-weight:700">💾 Guardar</button>
+            </div>
         </div>
-        
-        <!-- ESTADO DE RESULTADOS -->
-        <div id="view-resultados" class="view">
-            <div class="filters">
-                <label>Período:</label>
-                <input type="month" id="filter-resultados-periodo" value="2026-04" onchange="generarResultados()">
-                <button class="btn btn-primary" onclick="exportarResultados()" style="margin-left: auto;">📥 Excel</button>
+
+        <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div style="font-size:11px;font-weight:700;color:var(--azul-marino);text-transform:uppercase">Pólizas Registradas</div>
+                <input type="month" id="pol-filtro-mes" onchange="cargarListaPolizas()" style="padding:5px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
             </div>
-            <div id="resultados-report"></div>
-        </div>
-        
-        <!-- BALANCE GENERAL -->
-        <div id="view-balance" class="view">
-            <div class="filters">
-                <label>Fecha:</label>
-                <input type="date" id="filter-balance-fecha" value="2026-04-30" onchange="generarBalance()">
-                <button class="btn btn-primary" onclick="exportarBalance()" style="margin-left: auto;">📥 Excel</button>
-            </div>
-            <div id="balance-report"></div>
+            <div id="pol-lista"><div class="loading">Cargando…</div></div>
         </div>
     </div>
-    
-    <footer>
-        <p>SIF-Amir v2026.08.19.1 | NIF B-3, B-6, D-1, D-2 | Sistema Perpetuo Inventarios | Pólizas Nivel 4/5</p>
-    </footer>
 
-    <script>
-        const APP_VERSION = '2026.08.19.1';
-        
-        // ===== CATÁLOGO DE CUENTAS (NIF Anexo 24) =====
-        const CATALOGO = [
-            // ACTIVOS CIRCULANTES
-            { id: 1, codigo: '1100-00-000', nombre: 'ACTIVO CIRCULANTE', nivel: 2, tipo: 'activo', agrupador: null, acepta_mov: false, naturaleza: 'D' },
-            { id: 2, codigo: '1101-00-000', nombre: 'Efectivo y Equivalentes', nivel: 3, tipo: 'activo', agrupador: '101', acepta_mov: false, naturaleza: 'D' },
-            { id: 3, codigo: '1101-01-001', nombre: 'Caja General', nivel: 5, tipo: 'activo', agrupador: '101', acepta_mov: true, naturaleza: 'D' },
-            { id: 4, codigo: '1102-00-000', nombre: 'Bancos', nivel: 3, tipo: 'activo', agrupador: '102', acepta_mov: false, naturaleza: 'D' },
-            { id: 5, codigo: '1102-01-001', nombre: 'Banco Santander MXN', nivel: 5, tipo: 'activo', agrupador: '102.01', acepta_mov: true, naturaleza: 'D' },
-            { id: 6, codigo: '1102-01-002', nombre: 'Banco HSBC MXN', nivel: 5, tipo: 'activo', agrupador: '102.01', acepta_mov: true, naturaleza: 'D' },
-            
-            // INVENTARIOS (Sistema Perpetuo - NIF C-4)
-            { id: 7, codigo: '1115-00-000', nombre: 'Inventarios', nivel: 3, tipo: 'activo', agrupador: '115', acepta_mov: false, naturaleza: 'D' },
-            { id: 8, codigo: '1115-01-001', nombre: 'Inventario Consumibles Renta', nivel: 5, tipo: 'activo', agrupador: '115', acepta_mov: true, naturaleza: 'D' },
-            
-            // CUENTAS POR COBRAR
-            { id: 9, codigo: '1105-00-000', nombre: 'Cuentas por Cobrar', nivel: 3, tipo: 'activo', agrupador: '105', acepta_mov: false, naturaleza: 'D' },
-            { id: 10, codigo: '1105-01-001', nombre: 'Clientes Servicios Renta', nivel: 5, tipo: 'activo', agrupador: '105', acepta_mov: true, naturaleza: 'D' },
-            
-            // ACTIVOS NO CIRCULANTES
-            { id: 11, codigo: '1500-00-000', nombre: 'ACTIVO NO CIRCULANTE', nivel: 2, tipo: 'activo', agrupador: null, acepta_mov: false, naturaleza: 'D' },
-            { id: 12, codigo: '1152-00-000', nombre: 'Propiedad, Planta y Equipo', nivel: 3, tipo: 'activo', agrupador: '152', acepta_mov: false, naturaleza: 'D' },
-            { id: 13, codigo: '1152-01-001', nombre: 'Equipo de Renta', nivel: 5, tipo: 'activo', agrupador: '152', acepta_mov: true, naturaleza: 'D' },
-            { id: 14, codigo: '1157-00-000', nombre: 'Depreciación Acumulada', nivel: 3, tipo: 'activo', agrupador: '157', acepta_mov: false, naturaleza: 'A' },
-            { id: 15, codigo: '1157-01-001', nombre: 'Deprec. Acum. Equipo Renta', nivel: 5, tipo: 'activo', agrupador: '157', acepta_mov: true, naturaleza: 'A' },
-            
-            // PASIVOS
-            { id: 16, codigo: '2100-00-000', nombre: 'PASIVO', nivel: 2, tipo: 'pasivo', agrupador: null, acepta_mov: false, naturaleza: 'A' },
-            { id: 17, codigo: '2101-00-000', nombre: 'Proveedores', nivel: 3, tipo: 'pasivo', agrupador: '201', acepta_mov: false, naturaleza: 'A' },
-            { id: 18, codigo: '2101-01-001', nombre: 'Proveedores Nacionales', nivel: 5, tipo: 'pasivo', agrupador: '201', acepta_mov: true, naturaleza: 'A' },
-            { id: 19, codigo: '2152-00-000', nombre: 'Préstamos Bancarios LP', nivel: 3, tipo: 'pasivo', agrupador: '210', acepta_mov: false, naturaleza: 'A' },
-            { id: 20, codigo: '2152-01-001', nombre: 'Préstamo BBVA', nivel: 5, tipo: 'pasivo', agrupador: '210', acepta_mov: true, naturaleza: 'A' },
-            
-            // CAPITAL CONTABLE
-            { id: 21, codigo: '3100-00-000', nombre: 'CAPITAL CONTABLE', nivel: 2, tipo: 'capital', agrupador: null, acepta_mov: false, naturaleza: 'A' },
-            { id: 22, codigo: '3101-00-000', nombre: 'Capital', nivel: 3, tipo: 'capital', agrupador: '301', acepta_mov: false, naturaleza: 'A' },
-            { id: 23, codigo: '3101-01-001', nombre: 'Capital Amir Tafreshi', nivel: 5, tipo: 'capital', agrupador: '301', acepta_mov: true, naturaleza: 'A' },
-            
-            // UTILIDAD DEL EJERCICIO (NIF B-6 - Traspaso de ER)
-            { id: 24, codigo: '3105-00-000', nombre: 'Resultado del Ejercicio', nivel: 3, tipo: 'capital', agrupador: '305', acepta_mov: false, naturaleza: 'A' },
-            { id: 25, codigo: '3105-01-001', nombre: 'Utilidad/Pérdida 2026', nivel: 5, tipo: 'capital', agrupador: '305', acepta_mov: true, naturaleza: 'A' },
-            
-            // INGRESOS (NIF D-1)
-            { id: 26, codigo: '4100-00-000', nombre: 'INGRESOS', nivel: 2, tipo: 'ingreso', agrupador: null, acepta_mov: false, naturaleza: 'A' },
-            { id: 27, codigo: '4102-00-000', nombre: 'Ingresos por Servicios', nivel: 3, tipo: 'ingreso', agrupador: '402', acepta_mov: false, naturaleza: 'A' },
-            { id: 28, codigo: '4102-01-001', nombre: 'Ingresos Servicios Renta', nivel: 5, tipo: 'ingreso', agrupador: '402', acepta_mov: true, naturaleza: 'A' },
-            
-            // COSTOS (Sistema Perpetuo - NIF D-2)
-            { id: 29, codigo: '5100-00-000', nombre: 'COSTOS', nivel: 2, tipo: 'costo', agrupador: null, acepta_mov: false, naturaleza: 'D' },
-            { id: 30, codigo: '5102-00-000', nombre: 'Costo de Servicios', nivel: 3, tipo: 'costo', agrupador: '502', acepta_mov: false, naturaleza: 'D' },
-            { id: 31, codigo: '5102-01-001', nombre: 'Costo Consumibles Renta', nivel: 5, tipo: 'costo', agrupador: '502', acepta_mov: true, naturaleza: 'D' },
-            
-            // GASTOS (NIF B-3 - Separados)
-            { id: 32, codigo: '6100-00-000', nombre: 'GASTOS', nivel: 2, tipo: 'gasto', agrupador: null, acepta_mov: false, naturaleza: 'D' },
-            
-            // GASTOS DE VENTA (602)
-            { id: 33, codigo: '6102-00-000', nombre: 'Gastos de Venta', nivel: 3, tipo: 'gasto', agrupador: '602', acepta_mov: false, naturaleza: 'D' },
-            { id: 34, codigo: '6102-01-001', nombre: 'Publicidad Servicios', nivel: 5, tipo: 'gasto', agrupador: '602', acepta_mov: true, naturaleza: 'D' },
-            
-            // GASTOS DE ADMINISTRACIÓN (604)
-            { id: 35, codigo: '6104-00-000', nombre: 'Gastos de Administración', nivel: 3, tipo: 'gasto', agrupador: '604', acepta_mov: false, naturaleza: 'D' },
-            { id: 36, codigo: '6104-01-001', nombre: 'Servicios Profesionales', nivel: 5, tipo: 'gasto', agrupador: '604', acepta_mov: true, naturaleza: 'D' },
-            { id: 37, codigo: '6104-02-001', nombre: 'Servicios Bancarios', nivel: 5, tipo: 'gasto', agrupador: '604', acepta_mov: true, naturaleza: 'D' },
-            
-            // RESULTADO INTEGRAL DE FINANCIAMIENTO (701/702)
-            { id: 38, codigo: '7100-00-000', nombre: 'RIF', nivel: 2, tipo: 'rif', agrupador: null, acepta_mov: false, naturaleza: 'D' },
-            { id: 39, codigo: '7101-00-000', nombre: 'Gastos Financieros', nivel: 3, tipo: 'rif', agrupador: '701', acepta_mov: false, naturaleza: 'D' },
-            { id: 40, codigo: '7101-01-001', nombre: 'Intereses Bancarios', nivel: 5, tipo: 'rif', agrupador: '701', acepta_mov: true, naturaleza: 'D' },
-            { id: 41, codigo: '7102-00-000', nombre: 'Productos Financieros', nivel: 3, tipo: 'rif', agrupador: '702', acepta_mov: false, naturaleza: 'A' },
-            { id: 42, codigo: '7102-01-001', nombre: 'Intereses Ganados', nivel: 5, tipo: 'rif', agrupador: '702', acepta_mov: true, naturaleza: 'A' },
-        ];
-        
-        // ===== PÓLIZAS (Abril 2026) - Sistema Perpetuo =====
-        const POLIZAS = [
-            // Venta de servicio 1: $25,000 + Costo perpetuo
-            {
-                id: 1, tipo: 'ing', folio: 1, fecha: '2026-04-05',
-                concepto: 'Servicio Renta - Cliente A',
-                detalles: [
-                    { cuenta_id: 5, tipo_mov: 'cargo', monto: 25000 },     // Banco
-                    { cuenta_id: 28, tipo_mov: 'abono', monto: 25000 },    // Ingresos
-                ]
-            },
-            // Costo perpetuo de servicio 1: $8,000
-            {
-                id: 2, tipo: 'cst', folio: 1, fecha: '2026-04-05',
-                concepto: 'Costo Consumibles - Servicio A',
-                detalles: [
-                    { cuenta_id: 31, tipo_mov: 'cargo', monto: 8000 },     // Costo
-                    { cuenta_id: 8, tipo_mov: 'abono', monto: 8000 },      // Inventario
-                ]
-            },
-            // Venta de servicio 2: $18,000 + Costo perpetuo
-            {
-                id: 3, tipo: 'ing', folio: 2, fecha: '2026-04-12',
-                concepto: 'Servicio Renta - Cliente B',
-                detalles: [
-                    { cuenta_id: 5, tipo_mov: 'cargo', monto: 18000 },
-                    { cuenta_id: 28, tipo_mov: 'abono', monto: 18000 },
-                ]
-            },
-            // Costo perpetuo de servicio 2: $5,500
-            {
-                id: 4, tipo: 'cst', folio: 2, fecha: '2026-04-12',
-                concepto: 'Costo Consumibles - Servicio B',
-                detalles: [
-                    { cuenta_id: 31, tipo_mov: 'cargo', monto: 5500 },
-                    { cuenta_id: 8, tipo_mov: 'abono', monto: 5500 },
-                ]
-            },
-            // Pago de servicios (gasto admin)
-            {
-                id: 5, tipo: 'egr', folio: 1, fecha: '2026-04-10',
-                concepto: 'Servicios Profesionales',
-                detalles: [
-                    { cuenta_id: 36, tipo_mov: 'cargo', monto: 2000 },
-                    { cuenta_id: 5, tipo_mov: 'abono', monto: 2000 },
-                ]
-            },
-            // Intereses pagados (gasto financiero)
-            {
-                id: 6, tipo: 'egr', folio: 2, fecha: '2026-04-20',
-                concepto: 'Intereses Bancarios',
-                detalles: [
-                    { cuenta_id: 40, tipo_mov: 'cargo', monto: 1200 },
-                    { cuenta_id: 5, tipo_mov: 'abono', monto: 1200 },
-                ]
-            },
-            // Compra de consumibles (inventario)
-            {
-                id: 7, tipo: 'egr', folio: 3, fecha: '2026-04-08',
-                concepto: 'Compra Consumibles',
-                detalles: [
-                    { cuenta_id: 8, tipo_mov: 'cargo', monto: 20000 },
-                    { cuenta_id: 18, tipo_mov: 'abono', monto: 20000 },
-                ]
-            },
-        ];
-        
-        const POLIZAS_DETALLES = [];
-        (function() {
-            POLIZAS.forEach(p => {
-                p.detalles.forEach((d, idx) => {
-                    POLIZAS_DETALLES.push({
-                        id: POLIZAS_DETALLES.length + 1,
-                        poliza_id: p.id,
-                        cuenta_id: d.cuenta_id,
-                        tipo_movimiento: d.tipo_mov,
-                        monto: d.monto
-                    });
-                });
-            });
-        })();
-        
-        // ===== SALDOS INICIALES (Al 31 de Marzo 2026) =====
-        const SALDOS_INICIALES = {
-            5: 45000,      // Banco Santander
-            6: -2500,      // Banco HSBC
-            8: 15000,      // Inventario
-            10: 28000,     // Clientes
-            13: 52000,     // Equipo de Renta
-            15: -18000,    // Deprec. Acum.
-            18: 25000,     // Proveedores
-            20: 100000,    // Préstamo
-            23: 94500,     // Capital
-        };
-        
-        // ===== FUNCIONES UTILITARIAS =====
-        function numberClass(n) {
-            if(n < 0) return 'num-negative';
-            if(n === 0) return 'num-zero';
-            return '';
-        }
-        
-        function formatNumber(n) {
-            if(n === 0 || n === null || n === undefined) return '-';
-            const sign = n < 0 ? '-' : '';
-            const abs = Math.abs(n);
-            return sign + abs.toLocaleString('es-MX', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-        }
-        
-        function getSaldoInicial(ctaId) {
-            return SALDOS_INICIALES[ctaId] || 0;
-        }
-        
-        function calcularSaldo(ctaId, hastaFecha) {
-            const ini = getSaldoInicial(ctaId);
-            const movs = POLIZAS_DETALLES.filter(d => {
-                const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                return d.cuenta_id === ctaId && p && new Date(p.fecha) <= new Date(hastaFecha);
-            }).reduce((s, d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
-            return ini + movs;
-        }
-        
-        // ===== REPORTE AUXILIAR DEL LIBRO MAYOR =====
-        function llenarSelectAuxiliar() {
-            const sel = document.getElementById('filter-auxiliar-cuenta');
-            CATALOGO.filter(c => c.acepta_mov && (c.tipo === 'activo' || c.tipo === 'pasivo' || c.tipo === 'ingreso' || c.tipo === 'costo' || c.tipo === 'gasto' || c.tipo === 'rif')).forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.text = `${c.codigo} ${c.nombre}`;
-                sel.appendChild(opt);
-            });
-        }
-        
-        function generarAuxiliar() {
-            const cont = document.getElementById('auxiliar-report');
-            const ctaId = parseInt(document.getElementById('filter-auxiliar-cuenta').value);
-            const per = document.getElementById('filter-auxiliar-periodo').value;
-            
-            if(!per) { cont.innerHTML = '<div class="empty">Selecciona período</div>'; return; }
-            if(!ctaId) { cont.innerHTML = '<div class="empty">Selecciona cuenta</div>'; return; }
-            
-            const [año, mes] = per.split('-');
-            const cta = CATALOGO.find(c => c.id === ctaId);
-            
-            const movsCta = POLIZAS_DETALLES.filter(d => {
-                const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                return d.cuenta_id === ctaId && p && new Date(p.fecha).toISOString().slice(0, 7) === per;
-            });
-            
-            let html = `
-                <div class="report-header">
-                    <h2>📋 AUXILIAR DEL LIBRO MAYOR</h2>
-                    <p>${cta.nombre} | ${per}</p>
-                </div>
-                
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Póliza</th>
-                            <th>Concepto</th>
-                            <th>Cargos</th>
-                            <th>Abonos</th>
-                            <th>Saldo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            let saldo = getSaldoInicial(ctaId);
-            let totCargo = 0, totAbono = 0;
-            
-            movsCta.forEach(d => {
-                const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                const cargo = d.tipo_movimiento === 'cargo' ? d.monto : 0;
-                const abono = d.tipo_movimiento === 'abono' ? d.monto : 0;
-                saldo += (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto);
-                totCargo += cargo;
-                totAbono += abono;
-                
-                html += `<tr>
-                    <td>${p.fecha}</td>
-                    <td>${p.tipo.toUpperCase()}-${p.folio}</td>
-                    <td>${p.concepto}</td>
-                    <td class="num ${numberClass(cargo)}">${formatNumber(cargo)}</td>
-                    <td class="num ${numberClass(abono)}">${formatNumber(abono)}</td>
-                    <td class="num ${numberClass(saldo)}">${formatNumber(saldo)}</td>
-                </tr>`;
-            });
-            
-            html += `<tr class="subtotal-row">
-                    <td colspan="3">SUBTOTAL</td>
-                    <td class="num ${numberClass(totCargo)}">${formatNumber(totCargo)}</td>
-                    <td class="num ${numberClass(totAbono)}">${formatNumber(totAbono)}</td>
-                    <td class="num ${numberClass(saldo)}">${formatNumber(saldo)}</td>
-                </tr></tbody></table>`;
-            
-            cont.innerHTML = html;
-        }
-        
-        function exportarAuxiliar() {
-            const ws = XLSX.utils.aoa_to_sheet([['Auxiliar', document.getElementById('filter-auxiliar-periodo').value]]);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Auxiliar');
-            XLSX.writeFile(wb, 'Auxiliar.xlsx');
-        }
-        
-        // ===== REPORTE BALANZA DE COMPROBACIÓN =====
-        function generarBalanza() {
-            const cont = document.getElementById('balanza-report');
-            const per = document.getElementById('filter-balanza-periodo').value;
-            
-            if(!per) { cont.innerHTML = '<div class="empty">Selecciona período</div>'; return; }
-            
-            const [año, mes] = per.split('-');
-            const ultDia = new Date(año, parseInt(mes), 0).toISOString().split('T')[0];
-            
-            let html = `
-                <div class="report-header">
-                    <h2>⚖️ BALANZA DE COMPROBACIÓN</h2>
-                    <p>Del 01/${mes}/${año} al ${ultDia}</p>
-                </div>
-                
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Nombre Cuenta</th>
-                            <th>S.I. Deudor</th>
-                            <th>S.I. Acreedor</th>
-                            <th>Cargos</th>
-                            <th>Abonos</th>
-                            <th>S.F. Deudor</th>
-                            <th>S.F. Acreedor</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            let sumDeuIni = 0, sumAcrIni = 0, sumCargo = 0, sumAbono = 0, sumDeuFin = 0, sumAcrFin = 0;
-            
-            CATALOGO.filter(c => c.acepta_mov).forEach(c => {
-                const saldoIni = getSaldoInicial(c.id);
-                const movs = POLIZAS_DETALLES.filter(d => {
-                    const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                    return d.cuenta_id === c.id && p && new Date(p.fecha).toISOString().slice(0, 7) === per;
-                });
-                
-                let cargo = 0, abono = 0;
-                movs.forEach(d => {
-                    if(d.tipo_movimiento === 'cargo') cargo += d.monto;
-                    else abono += d.monto;
-                });
-                
-                const saldoFin = saldoIni + cargo - abono;
-                
-                const siDeu = saldoIni > 0 ? saldoIni : 0;
-                const siAcr = saldoIni < 0 ? Math.abs(saldoIni) : 0;
-                const sfDeu = saldoFin > 0 ? saldoFin : 0;
-                const sfAcr = saldoFin < 0 ? Math.abs(saldoFin) : 0;
-                
-                sumDeuIni += siDeu;
-                sumAcrIni += siAcr;
-                sumCargo += cargo;
-                sumAbono += abono;
-                sumDeuFin += sfDeu;
-                sumAcrFin += sfAcr;
-                
-                html += `<tr>
-                    <td>${c.codigo}</td>
-                    <td>${c.nombre}</td>
-                    <td class="num">${formatNumber(siDeu)}</td>
-                    <td class="num">${formatNumber(siAcr)}</td>
-                    <td class="num">${formatNumber(cargo)}</td>
-                    <td class="num">${formatNumber(abono)}</td>
-                    <td class="num">${formatNumber(sfDeu)}</td>
-                    <td class="num">${formatNumber(sfAcr)}</td>
-                </tr>`;
-            });
-            
-            html += `<tr class="total-row">
-                <td colspan="2">SUMAS IGUALES</td>
-                <td class="num ${numberClass(sumDeuIni)}">${formatNumber(sumDeuIni)}</td>
-                <td class="num ${numberClass(sumAcrIni)}">${formatNumber(sumAcrIni)}</td>
-                <td class="num ${numberClass(sumCargo)}">${formatNumber(sumCargo)}</td>
-                <td class="num ${numberClass(sumAbono)}">${formatNumber(sumAbono)}</td>
-                <td class="num ${numberClass(sumDeuFin)}">${formatNumber(sumDeuFin)}</td>
-                <td class="num ${numberClass(sumAcrFin)}">${formatNumber(sumAcrFin)}</td>
-            </tr></tbody></table>`;
-            
-            cont.innerHTML = html;
-        }
-        
-        function exportarBalanza() {
-            const ws = XLSX.utils.aoa_to_sheet([['Balanza', document.getElementById('filter-balanza-periodo').value]]);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Balanza');
-            XLSX.writeFile(wb, 'Balanza.xlsx');
-        }
-        
-        // ===== ESTADO DE RESULTADOS (NIF B-3) =====
-        function generarResultados() {
-            const cont = document.getElementById('resultados-report');
-            const per = document.getElementById('filter-resultados-periodo').value;
-            
-            if(!per) { cont.innerHTML = '<div class="empty">Selecciona período</div>'; return; }
-            
-            const [año, mes] = per.split('-');
-            
-            // Cálculos por tipo de cuenta
-            const calcMto = (ctaIds) => {
-                return POLIZAS_DETALLES.filter(d => {
-                    const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                    return ctaIds.includes(d.cuenta_id) && p && new Date(p.fecha).toISOString().slice(0, 7) === per;
-                }).reduce((s, d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
-            };
-            
-            // INGRESOS (cuenta 28: Ingresos Servicios)
-            const ingresos = calcMto([28]);
-            
-            // COSTOS (cuenta 31: Costo Consumibles)
-            const costos = calcMto([31]);
-            
-            // GASTOS DE VENTA (cuenta 34: Publicidad)
-            const gstVenta = calcMto([34]);
-            
-            // GASTOS DE ADMINISTRACIÓN (cuentas 36, 37)
-            const gstAdmin = calcMto([36, 37]);
-            
-            // GASTOS FINANCIEROS (cuenta 40: Intereses)
-            const gstFin = calcMto([40]);
-            
-            // PRODUCTOS FINANCIEROS (cuenta 42: Intereses Ganados)
-            const prodFin = calcMto([42]);
-            
-            // Cálculos cascada NIF B-3
-            const utilBruta = ingresos - costos;
-            const utilOper = utilBruta - gstVenta - gstAdmin;
-            const rif = -gstFin + prodFin;
-            const utilAntesImpuestos = utilOper + rif;
-            
-            let html = `
-                <div class="report-header">
-                    <h2>📈 ESTADO DE RESULTADOS INTEGRAL</h2>
-                    <p>Del 01/${mes}/${año} al 30/${mes}/${año} | NIF B-3</p>
-                </div>
-                
-                <div class="section">
-                    <div class="section-title">I. INGRESOS</div>
-                    <div class="section-line">
-                        <span class="section-line-label">Ingresos por Servicios</span>
-                        <span class="section-line-value num ${numberClass(ingresos)}">${formatNumber(ingresos)}</span>
-                    </div>
-                    <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
-                        <span>Total Ingresos</span>
-                        <span class="section-line-value num ${numberClass(ingresos)}">${formatNumber(ingresos)}</span>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <div class="section-title">II. COSTOS</div>
-                    <div class="section-line">
-                        <span class="section-line-label">Costo de Servicios (Consumibles)</span>
-                        <span class="section-line-value num ${numberClass(costos)}">${formatNumber(costos)}</span>
-                    </div>
-                    <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
-                        <span>Total Costos</span>
-                        <span class="section-line-value num ${numberClass(costos)}">${formatNumber(costos)}</span>
-                    </div>
-                    <div class="section-line" style="font-weight:600;color:#1e40af;padding-top:8px;margin-top:4px">
-                        <span>UTILIDAD BRUTA</span>
-                        <span class="section-line-value num ${numberClass(utilBruta)}">${formatNumber(utilBruta)}</span>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <div class="section-title">III. GASTOS OPERATIVOS</div>
-                    <div class="section-line">
-                        <span class="section-line-label">Gastos de Venta</span>
-                        <span class="section-line-value num ${numberClass(gstVenta)}">${formatNumber(gstVenta)}</span>
-                    </div>
-                    <div class="section-line">
-                        <span class="section-line-label">Gastos de Administración</span>
-                        <span class="section-line-value num ${numberClass(gstAdmin)}">${formatNumber(gstAdmin)}</span>
-                    </div>
-                    <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
-                        <span>Total Gastos Operativos</span>
-                        <span class="section-line-value num ${numberClass(gstVenta + gstAdmin)}">${formatNumber(gstVenta + gstAdmin)}</span>
-                    </div>
-                    <div class="section-line" style="font-weight:600;color:#1e40af;padding-top:8px;margin-top:4px">
-                        <span>UTILIDAD DE OPERACIÓN</span>
-                        <span class="section-line-value num ${numberClass(utilOper)}">${formatNumber(utilOper)}</span>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <div class="section-title">IV. RESULTADO INTEGRAL DE FINANCIAMIENTO</div>
-                    <div class="section-line">
-                        <span class="section-line-label">Gastos Financieros</span>
-                        <span class="section-line-value num ${numberClass(gstFin)}">${formatNumber(gstFin)}</span>
-                    </div>
-                    <div class="section-line">
-                        <span class="section-line-label">Productos Financieros</span>
-                        <span class="section-line-value num ${numberClass(prodFin)}">${formatNumber(prodFin)}</span>
-                    </div>
-                    <div class="section-line" style="font-weight:600;color:#1e293b;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:8px">
-                        <span>Total RIF</span>
-                        <span class="section-line-value num ${numberClass(rif)}">${formatNumber(rif)}</span>
-                    </div>
-                </div>
-                
-                <div class="section" style="background:#1e40af;color:#fff;border-color:#1e40af">
-                    <div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px">
-                        <span>${utilAntesImpuestos >= 0 ? '✓ UTILIDAD DEL EJERCICIO' : '✗ PÉRDIDA DEL EJERCICIO'}</span>
-                        <span class="${numberClass(utilAntesImpuestos)}">${formatNumber(utilAntesImpuestos)}</span>
-                    </div>
-                </div>
-            `;
-            
-            cont.innerHTML = html;
-        }
-        
-        function exportarResultados() {
-            const ws = XLSX.utils.aoa_to_sheet([['Resultados', document.getElementById('filter-resultados-periodo').value]]);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Resultados');
-            XLSX.writeFile(wb, 'Resultados.xlsx');
-        }
-        
-        // ===== BALANCE GENERAL (NIF B-6 - Incluye Traspaso de ER) =====
-        function generarBalance() {
-            const cont = document.getElementById('balance-report');
-            const fec = document.getElementById('filter-balance-fecha').value;
-            
-            if(!fec) { cont.innerHTML = '<div class="empty">Selecciona fecha</div>'; return; }
-            
-            // Calcular resultado acumulado del año
-            const ultDiaAno = new Date(new Date(fec).getFullYear(), 11, 31).toISOString().split('T')[0];
-            const periodoHastaFecha = new Date(fec).toISOString().slice(0, 7);
-            
-            const calcMtoHastaFecha = (ctaIds) => {
-                return POLIZAS_DETALLES.filter(d => {
-                    const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                    return ctaIds.includes(d.cuenta_id) && p && new Date(p.fecha) <= new Date(fec);
-                }).reduce((s, d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
-            };
-            
-            const ingresos = calcMtoHastaFecha([28]);
-            const costos = calcMtoHastaFecha([31]);
-            const gstVenta = calcMtoHastaFecha([34]);
-            const gstAdmin = calcMtoHastaFecha([36, 37]);
-            const gstFin = calcMtoHastaFecha([40]);
-            const prodFin = calcMtoHastaFecha([42]);
-            
-            const utilBruta = ingresos - costos;
-            const utilOper = utilBruta - gstVenta - gstAdmin;
-            const rif = -gstFin + prodFin;
-            const resultadoEjercicio = utilOper + rif; // ⭐ TRASPASO A BALANCE
-            
-            const calcSaldo = (ctaId) => {
-                const ini = getSaldoInicial(ctaId);
-                const movs = POLIZAS_DETALLES.filter(d => {
-                    const p = POLIZAS.find(pol => pol.id === d.poliza_id);
-                    return d.cuenta_id === ctaId && p && new Date(p.fecha) <= new Date(fec);
-                }).reduce((s, d) => s + (d.tipo_movimiento === 'cargo' ? d.monto : -d.monto), 0);
-                return ini + movs;
-            };
-            
-            let html = `
-                <div class="report-header">
-                    <h2>🏦 POSICIÓN FINANCIERA - BALANCE GENERAL</h2>
-                    <p>Al ${new Date(fec).toLocaleDateString('es-MX')} | NIF B-6</p>
-                </div>
-                
-                <div class="balance-container">
-                    <div class="balance-side">
-                        <h3>ACTIVO</h3>
-            `;
-            
-            let totAct = 0;
-            const cuentasActivo = [5, 6, 8, 10, 13, 15];
-            cuentasActivo.forEach(ctaId => {
-                const saldo = calcSaldo(ctaId);
-                const cta = CATALOGO.find(c => c.id === ctaId);
-                if(Math.abs(saldo) > 0.01) {
-                    totAct += saldo;
-                    html += `<div class="balance-item child">
-                        <span>${cta.nombre}</span>
-                        <span class="balance-amount num ${numberClass(saldo)}">${formatNumber(saldo)}</span>
-                    </div>`;
-                }
-            });
-            
-            html += `<div class="balance-total balance-item">
-                        <span>TOTAL ACTIVO</span>
-                        <span class="balance-amount num ${numberClass(totAct)}">${formatNumber(totAct)}</span>
-                    </div>
-                    </div>
-                    
-                    <div class="balance-side">
-                        <h3>PASIVO</h3>
-            `;
-            
-            let totPas = 0;
-            const cuentasPasivo = [18, 20];
-            cuentasPasivo.forEach(ctaId => {
-                const saldo = Math.abs(calcSaldo(ctaId));
-                const cta = CATALOGO.find(c => c.id === ctaId);
-                if(saldo > 0.01) {
-                    totPas += saldo;
-                    html += `<div class="balance-item child">
-                        <span>${cta.nombre}</span>
-                        <span class="balance-amount num">${formatNumber(saldo)}</span>
-                    </div>`;
-                }
-            });
-            
-            html += `<div class="balance-total balance-item">
-                        <span>TOTAL PASIVO</span>
-                        <span class="balance-amount num">${formatNumber(totPas)}</span>
-                    </div>
-                    
-                    <h3 style="margin-top:20px">CAPITAL CONTABLE</h3>
-            `;
-            
-            let totCap = 0;
-            const cuentasCapital = [23];
-            cuentasCapital.forEach(ctaId => {
-                const saldo = Math.abs(calcSaldo(ctaId));
-                const cta = CATALOGO.find(c => c.id === ctaId);
-                if(saldo > 0.01) {
-                    totCap += saldo;
-                    html += `<div class="balance-item child">
-                        <span>${cta.nombre}</span>
-                        <span class="balance-amount num">${formatNumber(saldo)}</span>
-                    </div>`;
-                }
-            });
-            
-            // TRASPASO DE RESULTADO DEL EJERCICIO (NIF B-6)
-            totCap += resultadoEjercicio;
-            html += `<div class="balance-item child" style="background:#e0f2fe;padding:8px;margin:8px 0;border-radius:4px;border-left:3px solid #0284c7">
-                        <span style="font-weight:600">⭐ Resultado del Ejercicio (Traspaso ER)</span>
-                        <span class="balance-amount num ${numberClass(resultadoEjercicio)}">${formatNumber(resultadoEjercicio)}</span>
-                    </div>`;
-            
-            html += `<div class="balance-total balance-item">
-                        <span>TOTAL CAPITAL</span>
-                        <span class="balance-amount num ${numberClass(totCap)}">${formatNumber(totCap)}</span>
-                    </div>
-                    
-                    <div class="balance-total balance-item" style="margin-top:12px;padding-top:12px;border-top:2px solid #e2e8f0">
-                        <span>SUMA PASIVO + CAPITAL</span>
-                        <span class="balance-amount num ${numberClass(totPas + totCap)}">${formatNumber(totPas + totCap)}</span>
-                    </div>
-                    </div>
-                </div>
-                
-                <div class="section" style="background:#f0fdf4;border-left-color:#22c55e">
-                    <div style="font-weight:600;font-size:12px;color:#166534">
-                        ${totAct.toFixed(2) === (totPas + totCap).toFixed(2) ? '✓ BALANCE CUADRADO' : '❌ BALANCE NO CUADRA'}
-                    </div>
-                </div>
-            `;
-            
-            cont.innerHTML = html;
-        }
-        
-        function exportarBalance() {
-            const ws = XLSX.utils.aoa_to_sheet([['Balance', document.getElementById('filter-balance-fecha').value]]);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Balance');
-            XLSX.writeFile(wb, 'Balance.xlsx');
-        }
-        
-        // ===== MÓDULO DE PÓLIZAS =====
+    <!-- AUXILIAR -->
+    <div id="view-auxiliar" class="view">
+        <div class="filters">
+            <label>Cuenta:</label>
+            <select id="filter-aux-cuenta" onchange="generarAuxiliar()" style="min-width:300px"></select>
+            <label style="margin-left:20px">Período:</label>
+            <input type="month" id="filter-aux-periodo" onchange="generarAuxiliar()">
+            <button class="btn btn-primary" onclick="exportarAuxiliar()" style="margin-left:auto">📥 Excel</button>
+        </div>
+        <div id="auxiliar-report"><div class="loading">Cargando…</div></div>
+    </div>
 
-        // Cuentas que aceptan movimientos (Nivel 4 y 5)
-        const CUENTAS_MOVIMIENTO = CATALOGO.filter(c => c.acepta_mov);
+    <!-- BALANZA -->
+    <div id="view-balanza" class="view">
+        <div class="filters">
+            <label>Período:</label>
+            <input type="month" id="filter-bal-periodo" onchange="generarBalanza()">
+            <button class="btn btn-primary" onclick="exportarBalanza()" style="margin-left:auto">📥 Excel</button>
+        </div>
+        <div id="balanza-report"><div class="loading">Cargando…</div></div>
+    </div>
 
-        // Contador de folios por tipo
-        const FOLIOS = { ING: 0, EGR: 0, DIA: 0 };
-        (function() {
-            POLIZAS.forEach(p => {
-                const t = (p.tipo || '').toUpperCase();
-                const f = parseInt(p.folio) || 0;
-                if (FOLIOS[t] !== undefined && f > FOLIOS[t]) FOLIOS[t] = f;
-            });
-        })();
+    <!-- ESTADO DE RESULTADOS -->
+    <div id="view-resultados" class="view">
+        <div class="filters">
+            <label>Período:</label>
+            <input type="month" id="filter-er-periodo" onchange="generarResultados()">
+            <button class="btn btn-primary" onclick="exportarResultados()" style="margin-left:auto">📥 Excel</button>
+        </div>
+        <div id="resultados-report"><div class="loading">Cargando…</div></div>
+    </div>
 
-        // Inicializar formulario de póliza
-        function initPolizaForm() {
-            // Fecha de hoy por defecto
-            document.getElementById('pol-fecha').value = new Date().toISOString().split('T')[0];
-            // Mes actual en filtro lista
-            document.getElementById('pol-filtro-mes').value = new Date().toISOString().slice(0,7);
-            actualizarFolio();
-            // 2 líneas iniciales
-            document.getElementById('pol-lineas').innerHTML = '';
-            agregarLineaPoliza();
-            agregarLineaPoliza();
-            renderListaPolizas();
-        }
+    <!-- BALANCE GENERAL -->
+    <div id="view-balance" class="view">
+        <div class="filters">
+            <label>Fecha:</label>
+            <input type="date" id="filter-bg-fecha" onchange="generarBalance()">
+            <button class="btn btn-primary" onclick="exportarBalance()" style="margin-left:auto">📥 Excel</button>
+        </div>
+        <div id="balance-report"><div class="loading">Cargando…</div></div>
+    </div>
+</div>
 
-        function actualizarFolio() {
-            const tipo = document.getElementById('pol-tipo').value;
-            const siguiente = (FOLIOS[tipo] || 0) + 1;
-            document.getElementById('pol-folio').value = String(siguiente).padStart(4, '0');
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            const selTipo = document.getElementById('pol-tipo');
-            if (selTipo) selTipo.addEventListener('change', actualizarFolio);
+<footer>
+    <p>SIF-Amir v2026.08.19.2 | NIF B-3, B-6, D-1, D-2 | Catálogo Supabase · amir_catalogo_cuentas</p>
+</footer>
+
+<script>
+(function () {
+    'use strict';
+
+    const APP_VERSION = '2026.08.19.2';
+    const SB_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
+    const SB_KEY  = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
+    var sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+    // ── Estado en memoria ──────────────────────────────────────────
+    var CATALOGO    = [];   // todos los registros de amir_catalogo_cuentas
+    var CTA_MOV     = [];   // solo nivel 4 y 5 (acepta_movimientos = true)
+    var FOLIOS      = { ING: 0, EGR: 0, DIA: 0 };
+    var lineaIdx    = 0;
+
+    // ── Utilidades ─────────────────────────────────────────────────
+    function fmt(n) {
+        if (!n && n !== 0) return '-';
+        var s = Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return (n < 0 ? '-' : '') + s;
+    }
+    function nc(n) {
+        return n < 0 ? 'num-negative' : (n === 0 ? 'num-zero' : '');
+    }
+    function mesActual() {
+        return new Date().toISOString().slice(0, 7);
+    }
+    function hoy() {
+        return new Date().toISOString().split('T')[0];
+    }
+
+    // ── Inicialización ─────────────────────────────────────────────
+    async function init() {
+        // Fechas por defecto
+        document.getElementById('pol-fecha').value        = hoy();
+        document.getElementById('pol-filtro-mes').value   = mesActual();
+        document.getElementById('filter-aux-periodo').value = mesActual();
+        document.getElementById('filter-bal-periodo').value = mesActual();
+        document.getElementById('filter-er-periodo').value  = mesActual();
+        document.getElementById('filter-bg-fecha').value    = hoy();
+
+        await cargarCatalogo();
+        actualizarFolio();
+        resetLineas();
+        cargarListaPolizas();
+    }
+
+    async function cargarCatalogo() {
+        var res = await sb
+            .from('amir_catalogo_cuentas')
+            .select('id, codigo, nombre, tipo, nivel, agrupador_sat, acepta_movimientos')
+            .order('codigo');
+
+        if (res.error) { console.error('Catálogo:', res.error); return; }
+
+        CATALOGO = res.data || [];
+        CTA_MOV  = CATALOGO.filter(function(c) { return c.acepta_movimientos; });
+
+        // Llenar select de auxiliar con cuentas de movimiento
+        var sel = document.getElementById('filter-aux-cuenta');
+        sel.innerHTML = '<option value="">-- Seleccionar cuenta --</option>';
+        CTA_MOV.forEach(function(c) {
+            var o = document.createElement('option');
+            o.value = c.id;
+            o.text  = c.codigo + ' ' + c.nombre;
+            sel.appendChild(o);
         });
 
-        function buildSelectCuenta(idSel, valorActual) {
-            let html = `<select id="${idSel}" onchange="recalcularTotales()" style="width:100%;padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
-                <option value="">-- Seleccionar cuenta --</option>`;
-            CUENTAS_MOVIMIENTO.forEach(c => {
-                const lv = c.nivel === 5 ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '';
-                const sel = (valorActual && valorActual == c.id) ? 'selected' : '';
-                html += `<option value="${c.id}" ${sel}>${lv}${c.codigo} ${c.nombre}</option>`;
+        // Cargar folios máximos desde Supabase
+        var fp = await sb.from('amir_polizas').select('tipo_poliza, numero');
+        if (!fp.error && fp.data) {
+            fp.data.forEach(function(p) {
+                var t = (p.tipo_poliza || '').toUpperCase();
+                var n = parseInt(p.numero) || 0;
+                if (FOLIOS[t] !== undefined && n > FOLIOS[t]) FOLIOS[t] = n;
             });
-            html += `</select>`;
-            return html;
         }
+        actualizarFolio();
+    }
 
-        let lineaIdx = 0;
-        function agregarLineaPoliza(cuentaId, debe, haber, concepto) {
-            const idx = ++lineaIdx;
-            const div = document.createElement('div');
-            div.id = `pol-linea-${idx}`;
-            div.style.cssText = 'display:grid;grid-template-columns:1fr 110px 110px 1fr 32px;gap:8px;align-items:center;margin-bottom:6px;padding:6px;background:var(--gris-tenue);border-radius:4px';
-            div.innerHTML = `
-                ${buildSelectCuenta(`pol-cta-${idx}`, cuentaId)}
-                <input type="number" id="pol-debe-${idx}" placeholder="Debe" min="0" step="0.01"
-                    value="${debe || ''}"
-                    oninput="limpiarHaber(${idx});recalcularTotales()"
-                    style="padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px;text-align:right;font-family:'Courier New',monospace">
-                <input type="number" id="pol-haber-${idx}" placeholder="Haber" min="0" step="0.01"
-                    value="${haber || ''}"
-                    oninput="limpiarDebe(${idx});recalcularTotales()"
-                    style="padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px;text-align:right;font-family:'Courier New',monospace">
-                <input type="text" id="pol-desc-${idx}" placeholder="Concepto línea (opcional)"
-                    value="${concepto || ''}"
-                    style="padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
-                <button onclick="eliminarLinea(${idx})" title="Eliminar" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;cursor:pointer;font-size:14px;font-weight:700">×</button>
-            `;
-            document.getElementById('pol-lineas').appendChild(div);
-            recalcularTotales();
-        }
+    // ── Folio ──────────────────────────────────────────────────────
+    function actualizarFolio() {
+        var tipo = document.getElementById('pol-tipo').value;
+        var sig  = (FOLIOS[tipo] || 0) + 1;
+        document.getElementById('pol-folio').value = String(sig).padStart(4, '0');
+    }
 
-        function limpiarHaber(idx) {
-            const h = document.getElementById(`pol-haber-${idx}`);
-            const d = document.getElementById(`pol-debe-${idx}`);
-            if (d && d.value) { if (h) h.value = ''; }
-        }
-        function limpiarDebe(idx) {
-            const d = document.getElementById(`pol-debe-${idx}`);
-            const h = document.getElementById(`pol-haber-${idx}`);
-            if (h && h.value) { if (d) d.value = ''; }
-        }
+    // ── Líneas de póliza ───────────────────────────────────────────
+    function resetLineas() {
+        document.getElementById('pol-lineas').innerHTML = '';
+        lineaIdx = 0;
+        agregarLinea();
+        agregarLinea();
+        recalcular();
+    }
 
-        function eliminarLinea(idx) {
-            const el = document.getElementById(`pol-linea-${idx}`);
-            if (el) el.remove();
-            recalcularTotales();
-        }
+    function agregarLinea() {
+        var idx = ++lineaIdx;
+        var div = document.createElement('div');
+        div.id = 'linea-' + idx;
+        div.style.cssText = 'display:grid;grid-template-columns:1fr 110px 110px 32px;gap:6px;margin-bottom:6px;align-items:center';
 
-        function getLineasActuales() {
-            const lineas = [];
-            document.querySelectorAll('[id^="pol-linea-"]').forEach(div => {
-                const idx = div.id.replace('pol-linea-', '');
-                const ctaId = parseInt(document.getElementById(`pol-cta-${idx}`)?.value);
-                const debe  = parseFloat(document.getElementById(`pol-debe-${idx}`)?.value) || 0;
-                const haber = parseFloat(document.getElementById(`pol-haber-${idx}`)?.value) || 0;
-                const desc  = document.getElementById(`pol-desc-${idx}`)?.value || '';
-                if (ctaId && (debe > 0 || haber > 0)) {
-                    lineas.push({ cuenta_id: ctaId, debe, haber, desc });
-                }
-            });
-            return lineas;
-        }
+        var opts = '<option value="">-- Cuenta --</option>';
+        CTA_MOV.forEach(function(c) {
+            var pad = c.nivel === 5 ? '\u00a0\u00a0\u00a0\u00a0' : '';
+            opts += '<option value="' + c.id + '">' + pad + c.codigo + ' ' + c.nombre + '</option>';
+        });
 
-        function recalcularTotales() {
-            const lineas = getLineasActuales();
-            const totalDebe  = lineas.reduce((s, l) => s + l.debe, 0);
-            const totalHaber = lineas.reduce((s, l) => s + l.haber, 0);
-            const diff = Math.round((totalDebe - totalHaber) * 100) / 100;
+        div.innerHTML = [
+            '<select id="cta-' + idx + '" onchange="recalcular()" style="padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">' + opts + '</select>',
+            '<input type="number" id="debe-' + idx + '" placeholder="0.00" min="0" step="0.01" oninput="limpiarHaber(' + idx + ');recalcular()" style="padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px;text-align:right;font-family:Courier New,monospace">',
+            '<input type="number" id="haber-' + idx + '" placeholder="0.00" min="0" step="0.01" oninput="limpiarDebe(' + idx + ');recalcular()" style="padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px;text-align:right;font-family:Courier New,monospace">',
+            '<button onclick="quitarLinea(' + idx + ')" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;cursor:pointer;font-size:14px;font-weight:700">×</button>'
+        ].join('');
 
-            document.getElementById('pol-total-debe').textContent  = `$${totalDebe.toLocaleString('es-MX', {minimumFractionDigits:2})}`;
-            document.getElementById('pol-total-haber').textContent = `$${totalHaber.toLocaleString('es-MX', {minimumFractionDigits:2})}`;
-            document.getElementById('pol-diferencia').textContent  = `$${Math.abs(diff).toLocaleString('es-MX', {minimumFractionDigits:2})}`;
+        document.getElementById('pol-lineas').appendChild(div);
+    }
 
-            const btn    = document.getElementById('btn-guardar-poliza');
-            const status = document.getElementById('pol-status');
-            const cuadra = diff === 0 && lineas.length >= 2;
+    function limpiarHaber(idx) {
+        var d = document.getElementById('debe-'  + idx);
+        var h = document.getElementById('haber-' + idx);
+        if (d && d.value) h.value = '';
+    }
+    function limpiarDebe(idx) {
+        var d = document.getElementById('debe-'  + idx);
+        var h = document.getElementById('haber-' + idx);
+        if (h && h.value) d.value = '';
+    }
+    function quitarLinea(idx) {
+        var el = document.getElementById('linea-' + idx);
+        if (el) el.remove();
+        recalcular();
+    }
 
-            if (cuadra) {
-                btn.disabled = false;
-                btn.style.cssText = 'padding:10px 20px;background:var(--azul-ejecutivo);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700';
-                status.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:#dcfce7;color:#166534';
-                status.textContent = '✓ Póliza cuadrada';
-                document.getElementById('pol-diferencia').style.color = '#16a34a';
-            } else {
-                btn.disabled = true;
-                btn.style.cssText = 'padding:10px 20px;background:#94a3b8;color:#fff;border:none;border-radius:6px;cursor:not-allowed;font-size:13px;font-weight:700';
-                status.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:#fef2f2;color:#991b1b';
-                status.textContent = diff !== 0 ? `❌ Descuadre: $${Math.abs(diff).toLocaleString('es-MX', {minimumFractionDigits:2})}` : 'Mínimo 2 líneas';
-                document.getElementById('pol-diferencia').style.color = 'var(--rojo-negativo)';
-            }
-        }
+    function getLineas() {
+        var lineas = [];
+        document.querySelectorAll('[id^="linea-"]').forEach(function(div) {
+            var i   = div.id.replace('linea-', '');
+            var cta = parseInt(document.getElementById('cta-'   + i)?.value) || 0;
+            var db  = parseFloat(document.getElementById('debe-' + i)?.value) || 0;
+            var hb  = parseFloat(document.getElementById('haber-'+ i)?.value) || 0;
+            if (cta && (db > 0 || hb > 0)) lineas.push({ cuenta_id: cta, debe: db, haber: hb });
+        });
+        return lineas;
+    }
 
-        function guardarPoliza() {
-            const tipo    = document.getElementById('pol-tipo').value;
-            const fecha   = document.getElementById('pol-fecha').value;
-            const concepto = document.getElementById('pol-concepto').value.trim();
-            const lineas  = getLineasActuales();
+    function recalcular() {
+        var lineas = getLineas();
+        var td = lineas.reduce(function(s,l){ return s+l.debe; }, 0);
+        var th = lineas.reduce(function(s,l){ return s+l.haber; }, 0);
+        var df = Math.round((td - th) * 100) / 100;
 
-            if (!fecha)    { alert('Falta la fecha'); return; }
-            if (!concepto) { alert('Falta el concepto'); return; }
+        document.getElementById('tot-debe').textContent  = '$' + fmt(td);
+        document.getElementById('tot-haber').textContent = '$' + fmt(th);
+        document.getElementById('tot-diff').textContent  = '$' + fmt(Math.abs(df));
 
-            const totalDebe  = lineas.reduce((s, l) => s + l.debe, 0);
-            const totalHaber = lineas.reduce((s, l) => s + l.haber, 0);
-            if (Math.round((totalDebe - totalHaber) * 100) !== 0) {
-                alert('La póliza no cuadra. Verifica debe = haber.'); return;
-            }
+        var btn    = document.getElementById('btn-guardar');
+        var status = document.getElementById('pol-status');
+        var ok     = df === 0 && lineas.length >= 2;
 
-            // Incrementar folio
-            FOLIOS[tipo] = (FOLIOS[tipo] || 0) + 1;
-            const folio = FOLIOS[tipo];
-
-            // Crear póliza en memoria
-            const polizaId = POLIZAS.length + 1;
-            const nuevaPoliza = { id: polizaId, tipo: tipo.toLowerCase(), folio, fecha, concepto, detalles: [] };
-
-            // Crear detalles y push a POLIZAS_DETALLES
-            lineas.forEach(l => {
-                const cta = CATALOGO.find(c => c.id === l.cuenta_id);
-                // Nivel 4/5 validado en frontend; el trigger lo valida en Supabase
-                nuevaPoliza.detalles.push({
-                    cuenta_id: l.cuenta_id,
-                    tipo_mov: l.debe > 0 ? 'cargo' : 'abono',
-                    monto: l.debe > 0 ? l.debe : l.haber
-                });
-                POLIZAS_DETALLES.push({
-                    id: POLIZAS_DETALLES.length + 1,
-                    poliza_id: polizaId,
-                    cuenta_id: l.cuenta_id,
-                    tipo_movimiento: l.debe > 0 ? 'cargo' : 'abono',
-                    monto: l.debe > 0 ? l.debe : l.haber
-                });
-            });
-
-            POLIZAS.push(nuevaPoliza);
-
-            // Resetear formulario
-            document.getElementById('pol-concepto').value = '';
-            document.getElementById('pol-lineas').innerHTML = '';
-            lineaIdx = 0;
-            actualizarFolio();
-            agregarLineaPoliza();
-            agregarLineaPoliza();
-            recalcularTotales();
-            renderListaPolizas();
-
-            // Feedback
-            const status = document.getElementById('pol-status');
+        if (ok) {
+            btn.disabled = false;
+            btn.style.cssText = 'padding:10px 20px;background:var(--azul-ejecutivo);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700';
             status.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:#dcfce7;color:#166534';
-            status.textContent = `✓ Póliza ${tipo}-${String(folio).padStart(4,'0')} guardada`;
-            setTimeout(() => {
-                status.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:var(--gris-tenue);color:var(--gris-etiqueta)';
-                status.textContent = 'Captura en progreso';
-            }, 2500);
+            status.textContent = '✓ Póliza cuadrada';
+            document.getElementById('tot-diff').style.color = '#16a34a';
+        } else {
+            btn.disabled = true;
+            btn.style.cssText = 'padding:10px 20px;background:#94a3b8;color:#fff;border:none;border-radius:6px;cursor:not-allowed;font-size:13px;font-weight:700';
+            status.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:#fef2f2;color:#991b1b';
+            status.textContent = df !== 0 ? '❌ Descuadre $' + fmt(Math.abs(df)) : 'Mínimo 2 líneas con monto';
+            document.getElementById('tot-diff').style.color = 'var(--rojo-negativo)';
         }
+    }
 
-        function renderListaPolizas() {
-            const mes = document.getElementById('pol-filtro-mes')?.value || '';
-            const cont = document.getElementById('pol-lista');
-            const filtradas = mes
-                ? POLIZAS.filter(p => p.fecha && p.fecha.slice(0,7) === mes)
-                : POLIZAS;
+    // ── Guardar póliza ─────────────────────────────────────────────
+    async function guardarPoliza() {
+        var tipo     = document.getElementById('pol-tipo').value;
+        var fecha    = document.getElementById('pol-fecha').value;
+        var concepto = document.getElementById('pol-concepto').value.trim();
+        var lineas   = getLineas();
 
-            if (!filtradas.length) {
-                cont.innerHTML = '<div class="empty">Sin pólizas en el período</div>';
-                return;
-            }
+        if (!fecha)    { alert('Falta la fecha'); return; }
+        if (!concepto) { alert('Falta el concepto'); return; }
 
-            let html = `<table>
-                <thead><tr>
-                    <th>Fecha</th><th>Tipo</th><th>Folio</th><th>Concepto</th>
-                    <th class="num">Debe</th><th class="num">Haber</th><th>Detalle</th>
-                </tr></thead><tbody>`;
+        var td = lineas.reduce(function(s,l){ return s+l.debe; }, 0);
+        var th = lineas.reduce(function(s,l){ return s+l.haber; }, 0);
+        if (Math.round((td - th) * 100) !== 0) { alert('Póliza descuadrada'); return; }
 
-            filtradas.forEach(p => {
-                const lineas = p.detalles || [];
-                const totalDebe  = lineas.filter(d => d.tipo_mov === 'cargo' ).reduce((s,d) => s+d.monto, 0);
-                const totalHaber = lineas.filter(d => d.tipo_mov === 'abono' ).reduce((s,d) => s+d.monto, 0);
-                const folio = String(p.folio).padStart(4,'0');
-                html += `<tr>
-                    <td>${p.fecha}</td>
-                    <td><span style="font-weight:600;color:var(--azul-ejecutivo)">${(p.tipo||'').toUpperCase()}</span></td>
-                    <td>${folio}</td>
-                    <td>${p.concepto}</td>
-                    <td class="num">${totalDebe ? totalDebe.toLocaleString('es-MX',{minimumFractionDigits:2}) : '-'}</td>
-                    <td class="num">${totalHaber ? totalHaber.toLocaleString('es-MX',{minimumFractionDigits:2}) : '-'}</td>
-                    <td><button onclick="verDetallePoliza(${p.id})" style="padding:3px 8px;background:var(--azul-claro);color:var(--azul-marino);border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600">Ver</button></td>
-                </tr>`;
-            });
+        FOLIOS[tipo] = (FOLIOS[tipo] || 0) + 1;
+        var folio = String(FOLIOS[tipo]).padStart(4, '0');
 
-            html += '</tbody></table>';
-            cont.innerHTML = html;
-        }
+        // Insertar encabezado
+        var rp = await sb.from('amir_polizas').insert({
+            fecha:       fecha,
+            tipo_poliza: tipo,
+            numero:      String(FOLIOS[tipo]),
+            concepto:    concepto
+        }).select().single();
 
-        function verDetallePoliza(polizaId) {
-            const p = POLIZAS.find(x => x.id === polizaId);
-            if (!p) return;
-            let txt = `PÓLIZA ${(p.tipo||'').toUpperCase()}-${String(p.folio).padStart(4,'0')} | ${p.fecha}\n${p.concepto}\n\n`;
-            txt += `${'CUENTA'.padEnd(40)} ${'DEBE'.padStart(14)} ${'HABER'.padStart(14)}\n`;
-            txt += '─'.repeat(70) + '\n';
-            (p.detalles||[]).forEach(d => {
-                const cta = CATALOGO.find(c => c.id === d.cuenta_id);
-                const nombre = cta ? `${cta.codigo} ${cta.nombre}`.substring(0,38) : `Cta ${d.cuenta_id}`;
-                const debe  = d.tipo_mov === 'cargo'  ? d.monto.toLocaleString('es-MX',{minimumFractionDigits:2}) : '';
-                const haber = d.tipo_mov === 'abono'  ? d.monto.toLocaleString('es-MX',{minimumFractionDigits:2}) : '';
-                txt += `${nombre.padEnd(40)} ${debe.padStart(14)} ${haber.padStart(14)}\n`;
-            });
-            alert(txt);
-        }
+        if (rp.error) { alert('Error al guardar póliza: ' + rp.error.message); FOLIOS[tipo]--; return; }
 
-        // ===== NAVEGACIÓN =====
-        function setView(v) {
-            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-            document.getElementById('view-' + v).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            if(v === 'polizas') { renderListaPolizas(); actualizarFolio(); }
-            else if(v === 'auxiliar') generarAuxiliar();
-            else if(v === 'balanza') generarBalanza();
-            else if(v === 'resultados') generarResultados();
-            else if(v === 'balance') generarBalance();
-        }
-        
-        // ===== INICIALIZACIÓN =====
-        window.addEventListener('DOMContentLoaded', () => {
-            initPolizaForm();
-            llenarSelectAuxiliar();
-            generarAuxiliar();
+        // Insertar detalles
+        var detalles = lineas.map(function(l) {
+            return { poliza_id: rp.data.id, cuenta_id: l.cuenta_id, debe: l.debe, haber: l.haber };
         });
-        
-        window.agregarLineaPoliza = agregarLineaPoliza;
-        window.eliminarLinea = eliminarLinea;
-        window.limpiarHaber = limpiarHaber;
-        window.limpiarDebe = limpiarDebe;
-        window.recalcularTotales = recalcularTotales;
-        window.guardarPoliza = guardarPoliza;
-        window.renderListaPolizas = renderListaPolizas;
-        window.verDetallePoliza = verDetallePoliza;
-        window.generarAuxiliar = generarAuxiliar;
-        window.exportarAuxiliar = exportarAuxiliar;
-        window.generarBalanza = generarBalanza;
-        window.exportarBalanza = exportarBalanza;
-        window.generarResultados = generarResultados;
-        window.exportarResultados = exportarResultados;
-        window.generarBalance = generarBalance;
-        window.exportarBalance = exportarBalance;
-        window.setView = setView;
-    </script>
+        var rd = await sb.from('amir_polizas_detalles').insert(detalles);
+        if (rd.error) {
+            alert('Error en detalles: ' + rd.error.message);
+            await sb.from('amir_polizas').delete().eq('id', rp.data.id);
+            FOLIOS[tipo]--;
+            return;
+        }
+
+        // Reset
+        document.getElementById('pol-concepto').value = '';
+        resetLineas();
+        actualizarFolio();
+        cargarListaPolizas();
+
+        var s = document.getElementById('pol-status');
+        s.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:#dcfce7;color:#166534';
+        s.textContent = '✓ Póliza ' + tipo + '-' + folio + ' guardada en Supabase';
+        setTimeout(function() {
+            s.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:var(--gris-tenue);color:var(--gris-etiqueta)';
+            s.textContent = 'Captura en progreso';
+        }, 3000);
+    }
+
+    // ── Lista de pólizas ───────────────────────────────────────────
+    async function cargarListaPolizas() {
+        var mes  = document.getElementById('pol-filtro-mes').value;
+        var cont = document.getElementById('pol-lista');
+        cont.innerHTML = '<div class="loading">Cargando…</div>';
+
+        var desde = mes + '-01';
+        var hasta = mes + '-31';
+
+        var res = await sb
+            .from('amir_polizas')
+            .select('id, fecha, tipo_poliza, numero, concepto, amir_polizas_detalles(debe, haber)')
+            .gte('fecha', desde)
+            .lte('fecha', hasta)
+            .order('fecha')
+            .order('numero');
+
+        if (res.error) { cont.innerHTML = '<div class="empty">Error: ' + res.error.message + '</div>'; return; }
+        if (!res.data || !res.data.length) { cont.innerHTML = '<div class="empty">Sin pólizas en el período</div>'; return; }
+
+        var html = '<table><thead><tr><th>Fecha</th><th>Tipo</th><th>Folio</th><th>Concepto</th><th class="num">Debe</th><th class="num">Haber</th><th></th></tr></thead><tbody>';
+        res.data.forEach(function(p) {
+            var dets = p.amir_polizas_detalles || [];
+            var td = dets.reduce(function(s,d){ return s+(d.debe||0); }, 0);
+            var th = dets.reduce(function(s,d){ return s+(d.haber||0); }, 0);
+            html += '<tr>';
+            html += '<td>' + p.fecha + '</td>';
+            html += '<td><span style="font-weight:600;color:var(--azul-ejecutivo)">' + p.tipo_poliza + '</span></td>';
+            html += '<td>' + String(p.numero).padStart(4,'0') + '</td>';
+            html += '<td>' + (p.concepto||'') + '</td>';
+            html += '<td class="num">' + fmt(td) + '</td>';
+            html += '<td class="num">' + fmt(th) + '</td>';
+            html += '<td><button onclick="verDetalle(' + p.id + ')" style="padding:3px 8px;background:var(--azul-claro);color:var(--azul-marino);border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600">Ver</button></td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        cont.innerHTML = html;
+    }
+
+    async function verDetalle(polizaId) {
+        var res = await sb
+            .from('amir_polizas_detalles')
+            .select('debe, haber, cuenta_id, amir_catalogo_cuentas(codigo, nombre)')
+            .eq('poliza_id', polizaId);
+        if (res.error || !res.data) { alert('Error al cargar detalle'); return; }
+
+        var pol = await sb.from('amir_polizas').select('*').eq('id', polizaId).single();
+        var p   = pol.data || {};
+
+        var txt = 'PÓLIZA ' + p.tipo_poliza + '-' + String(p.numero).padStart(4,'0') + ' | ' + p.fecha + '\n' + (p.concepto||'') + '\n\n';
+        txt += 'CUENTA'.padEnd(45) + 'DEBE'.padStart(14) + 'HABER'.padStart(14) + '\n';
+        txt += '─'.repeat(73) + '\n';
+        res.data.forEach(function(d) {
+            var cta = d.amir_catalogo_cuentas || {};
+            var nom = ((cta.codigo||'') + ' ' + (cta.nombre||'')).substring(0,43);
+            txt += nom.padEnd(45) + (d.debe  > 0 ? fmt(d.debe).padStart(14)  : ''.padStart(14));
+            txt += (d.haber > 0 ? fmt(d.haber).padStart(14) : ''.padStart(14)) + '\n';
+        });
+        alert(txt);
+    }
+
+    // ── Auxiliar del libro mayor ───────────────────────────────────
+    async function generarAuxiliar() {
+        var ctaId = parseInt(document.getElementById('filter-aux-cuenta').value) || 0;
+        var per   = document.getElementById('filter-aux-periodo').value;
+        var cont  = document.getElementById('auxiliar-report');
+        if (!ctaId) { cont.innerHTML = '<div class="empty">Selecciona una cuenta</div>'; return; }
+        if (!per)   { cont.innerHTML = '<div class="empty">Selecciona período</div>'; return; }
+
+        cont.innerHTML = '<div class="loading">Cargando…</div>';
+        var cta = CATALOGO.find(function(c){ return c.id === ctaId; }) || {};
+
+        var desde = per + '-01';
+        var hasta = per + '-31';
+
+        var res = await sb
+            .from('amir_polizas_detalles')
+            .select('debe, haber, poliza_id, amir_polizas(fecha, tipo_poliza, numero, concepto)')
+            .eq('cuenta_id', ctaId)
+            .gte('amir_polizas.fecha', desde)
+            .lte('amir_polizas.fecha', hasta)
+            .order('amir_polizas(fecha)');
+
+        if (res.error) { cont.innerHTML = '<div class="empty">Error: ' + res.error.message + '</div>'; return; }
+
+        var movs = (res.data || []).filter(function(d){ return d.amir_polizas; });
+
+        var html = '<div class="report-header"><h2>📋 AUXILIAR DEL LIBRO MAYOR</h2><p>' + cta.codigo + ' ' + cta.nombre + ' | ' + per + '</p></div>';
+        html += '<table><thead><tr><th>Fecha</th><th>Póliza</th><th>Concepto</th><th class="num">Debe</th><th class="num">Haber</th><th class="num">Saldo</th></tr></thead><tbody>';
+
+        var saldo = 0, totD = 0, totH = 0;
+        movs.forEach(function(d) {
+            var p = d.amir_polizas;
+            saldo += (d.debe||0) - (d.haber||0);
+            totD  += d.debe||0;
+            totH  += d.haber||0;
+            html += '<tr><td>' + p.fecha + '</td><td>' + p.tipo_poliza + '-' + String(p.numero).padStart(4,'0') + '</td><td>' + (p.concepto||'') + '</td>';
+            html += '<td class="num">' + (d.debe  > 0 ? fmt(d.debe)  : '-') + '</td>';
+            html += '<td class="num">' + (d.haber > 0 ? fmt(d.haber) : '-') + '</td>';
+            html += '<td class="num ' + nc(saldo) + '">' + fmt(saldo) + '</td></tr>';
+        });
+
+        if (!movs.length) html += '<tr><td colspan="6" class="empty">Sin movimientos</td></tr>';
+        html += '<tr class="subtotal-row"><td colspan="3">SUBTOTAL</td><td class="num">' + fmt(totD) + '</td><td class="num">' + fmt(totH) + '</td><td class="num ' + nc(saldo) + '">' + fmt(saldo) + '</td></tr>';
+        html += '</tbody></table>';
+        cont.innerHTML = html;
+    }
+
+    function exportarAuxiliar() {
+        var wb = XLSX.utils.book_new();
+        var ws = XLSX.utils.aoa_to_sheet([['Auxiliar']]);
+        XLSX.utils.book_append_sheet(wb, ws, 'Auxiliar');
+        XLSX.writeFile(wb, 'Auxiliar.xlsx');
+    }
+
+    // ── Balanza de comprobación ────────────────────────────────────
+    async function generarBalanza() {
+        var per  = document.getElementById('filter-bal-periodo').value;
+        var cont = document.getElementById('balanza-report');
+        if (!per) { cont.innerHTML = '<div class="empty">Selecciona período</div>'; return; }
+        cont.innerHTML = '<div class="loading">Cargando…</div>';
+
+        var desde = per + '-01';
+        var hasta = per + '-31';
+
+        // Saldos acumulados desde amir_v_saldos_cuenta (view recursivo)
+        var res = await sb
+            .from('amir_v_saldos_cuenta')
+            .select('cuenta_id, codigo, nombre, nivel, debe_acumulado, haber_acumulado, saldo')
+            .eq('nivel', 2)   // Balanza = Nivel 2
+            .order('codigo');
+
+        // Fallback: leer detalles directamente si el view no está disponible
+        var resD = await sb
+            .from('amir_polizas_detalles')
+            .select('cuenta_id, debe, haber, amir_polizas(fecha)')
+            .gte('amir_polizas.fecha', desde)
+            .lte('amir_polizas.fecha', hasta);
+
+        var movsPorCta = {};
+        if (!resD.error && resD.data) {
+            resD.data.filter(function(d){ return d.amir_polizas; }).forEach(function(d) {
+                if (!movsPorCta[d.cuenta_id]) movsPorCta[d.cuenta_id] = { debe: 0, haber: 0 };
+                movsPorCta[d.cuenta_id].debe  += d.debe  || 0;
+                movsPorCta[d.cuenta_id].haber += d.haber || 0;
+            });
+        }
+
+        // Acumular hacia cuentas padre usando CATALOGO
+        var saldosCta = {};
+        Object.keys(movsPorCta).forEach(function(ctaId) {
+            var id = parseInt(ctaId);
+            var m  = movsPorCta[id];
+            // Subir por jerarquía usando cuenta_padre_id
+            subirHierarchy(id, m.debe, m.haber, saldosCta);
+        });
+
+        var html = '<div class="report-header"><h2>⚖️ BALANZA DE COMPROBACIÓN</h2><p>Período: ' + per + '</p></div>';
+        html += '<table><thead><tr><th>Código</th><th>Nombre</th><th class="num">Cargos</th><th class="num">Abonos</th><th class="num">S.F. Deudor</th><th class="num">S.F. Acreedor</th></tr></thead><tbody>';
+
+        var sumC = 0, sumA = 0, sumD = 0, sumAcr = 0;
+        // Mostrar nivel 2 y 3 acumulados
+        CATALOGO.filter(function(c){ return c.nivel === 2 || c.nivel === 3; }).forEach(function(c) {
+            var s = saldosCta[c.id] || { debe: 0, haber: 0 };
+            if (s.debe === 0 && s.haber === 0) return;
+            var sfD = s.debe > s.haber ? s.debe - s.haber : 0;
+            var sfA = s.haber > s.debe ? s.haber - s.debe : 0;
+            sumC   += s.debe; sumA += s.haber; sumD += sfD; sumAcr += sfA;
+            var indent = c.nivel === 3 ? 'padding-left:20px' : 'font-weight:600';
+            html += '<tr><td style="' + indent + '">' + c.codigo + '</td><td style="' + indent + '">' + c.nombre + '</td>';
+            html += '<td class="num">' + (s.debe  > 0 ? fmt(s.debe)  : '-') + '</td>';
+            html += '<td class="num">' + (s.haber > 0 ? fmt(s.haber) : '-') + '</td>';
+            html += '<td class="num">' + (sfD > 0 ? fmt(sfD) : '-') + '</td>';
+            html += '<td class="num">' + (sfA > 0 ? fmt(sfA) : '-') + '</td></tr>';
+        });
+
+        html += '<tr class="total-row"><td colspan="2">SUMAS IGUALES</td><td class="num">' + fmt(sumC) + '</td><td class="num">' + fmt(sumA) + '</td><td class="num">' + fmt(sumD) + '</td><td class="num">' + fmt(sumAcr) + '</td></tr>';
+        html += '</tbody></table>';
+        cont.innerHTML = html;
+    }
+
+    function subirHierarchy(ctaId, debe, haber, acc) {
+        var cta = CATALOGO.find(function(c){ return c.id === ctaId; });
+        if (!cta) return;
+        if (!acc[ctaId]) acc[ctaId] = { debe: 0, haber: 0 };
+        acc[ctaId].debe  += debe;
+        acc[ctaId].haber += haber;
+        if (cta.cuenta_padre_id) subirHierarchy(cta.cuenta_padre_id, debe, haber, acc);
+    }
+
+    function exportarBalanza() {
+        var wb = XLSX.utils.book_new();
+        var ws = XLSX.utils.aoa_to_sheet([['Balanza']]);
+        XLSX.utils.book_append_sheet(wb, ws, 'Balanza');
+        XLSX.writeFile(wb, 'Balanza.xlsx');
+    }
+
+    // ── Estado de resultados ───────────────────────────────────────
+    async function generarResultados() {
+        var per  = document.getElementById('filter-er-periodo').value;
+        var cont = document.getElementById('resultados-report');
+        if (!per) { cont.innerHTML = '<div class="empty">Selecciona período</div>'; return; }
+        cont.innerHTML = '<div class="loading">Cargando…</div>';
+
+        var desde = per + '-01';
+        var hasta = per + '-31';
+
+        var res = await sb
+            .from('amir_polizas_detalles')
+            .select('cuenta_id, debe, haber, amir_polizas(fecha)')
+            .gte('amir_polizas.fecha', desde)
+            .lte('amir_polizas.fecha', hasta);
+
+        if (res.error) { cont.innerHTML = '<div class="empty">Error: ' + res.error.message + '</div>'; return; }
+
+        var movs = (res.data || []).filter(function(d){ return d.amir_polizas; });
+
+        function tipoSaldo(tipos) {
+            return movs.filter(function(d) {
+                var c = CATALOGO.find(function(x){ return x.id === d.cuenta_id; });
+                return c && tipos.indexOf(c.tipo) >= 0;
+            }).reduce(function(s,d){ return s + (d.debe||0) - (d.haber||0); }, 0);
+        }
+
+        var ingresos = -tipoSaldo(['I Ingreso Acreedora']);
+        var costos   =  tipoSaldo(['C Costo Deudora']);
+        var gVenta   =  tipoSaldo(['G Gasto Deudora']);   // tipo que incluya 602
+        var gAdmin   =  tipoSaldo(['G Gasto Deudora']);   // se separan por agrupador
+        var gFin     =  tipoSaldo(['D Gasto Financiero Deudora']);
+        var pFin     = -tipoSaldo(['D Producto Financiero Acreedora']);
+
+        // Separar por agrupador SAT (venta=602, admin=604, rif=701/702)
+        function sumAgrup(agrupadores) {
+            return movs.filter(function(d) {
+                var c = CATALOGO.find(function(x){ return x.id === d.cuenta_id; });
+                return c && agrupadores.indexOf(Math.floor(c.agrupador_sat)) >= 0;
+            }).reduce(function(s,d){ return s + (d.debe||0) - (d.haber||0); }, 0);
+        }
+
+        // Recalcular correctamente por agrupador SAT
+        ingresos = -sumAgrup([402, 401, 403, 404]);
+        costos   =  sumAgrup([502, 501, 503]);
+        gVenta   =  sumAgrup([602, 601, 603]);
+        gAdmin   =  sumAgrup([604, 605, 606, 607, 608, 609, 610, 611, 612]);
+        gFin     =  sumAgrup([701, 702, 703]);
+        pFin     = -sumAgrup([702]);
+
+        var utilBruta = ingresos - costos;
+        var utilOper  = utilBruta - gVenta - gAdmin;
+        var rif       = pFin - gFin;
+        var resultado = utilOper + rif;
+
+        var [año, mes] = per.split('-');
+        var html = '<div class="report-header"><h2>📈 ESTADO DE RESULTADOS INTEGRAL</h2><p>Del 01/' + mes + '/' + año + ' al 31/' + mes + '/' + año + ' | NIF B-3</p></div>';
+
+        function seccion(titulo, lineasArr, subtotal, subLabel) {
+            var h = '<div class="section"><div class="section-title">' + titulo + '</div>';
+            lineasArr.forEach(function(l) {
+                h += '<div class="section-line"><span class="section-line-label">' + l[0] + '</span><span class="section-line-value num ' + nc(l[1]) + '">' + fmt(l[1]) + '</span></div>';
+            });
+            if (subLabel) {
+                h += '<div class="section-line" style="font-weight:700;color:var(--azul-marino);border-top:1px solid var(--gris-borde);padding-top:8px;margin-top:6px">';
+                h += '<span>' + subLabel + '</span><span class="section-line-value num ' + nc(subtotal) + '">' + fmt(subtotal) + '</span></div>';
+            }
+            h += '</div>';
+            return h;
+        }
+
+        html += seccion('I. INGRESOS', [['Ingresos por Servicios', ingresos]], ingresos, 'Total Ingresos');
+        html += seccion('II. COSTOS', [['Costo de Servicios', costos]], utilBruta, 'UTILIDAD BRUTA');
+        html += seccion('III. GASTOS OPERATIVOS', [['Gastos de Venta', gVenta], ['Gastos de Administración', gAdmin]], utilOper, 'UTILIDAD DE OPERACIÓN');
+        html += seccion('IV. RESULTADO INTEGRAL DE FINANCIAMIENTO', [['Gastos Financieros', gFin], ['Productos Financieros', pFin]], rif, 'RIF');
+        html += '<div class="section" style="background:var(--azul-ejecutivo);color:#fff;border-color:var(--azul-ejecutivo)">';
+        html += '<div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px">';
+        html += '<span>' + (resultado >= 0 ? '✓ UTILIDAD DEL EJERCICIO' : '✗ PÉRDIDA DEL EJERCICIO') + '</span>';
+        html += '<span class="' + nc(resultado) + '">' + fmt(resultado) + '</span></div></div>';
+
+        cont.innerHTML = html;
+    }
+
+    function exportarResultados() {
+        var wb = XLSX.utils.book_new();
+        var ws = XLSX.utils.aoa_to_sheet([['Estado de Resultados']]);
+        XLSX.utils.book_append_sheet(wb, ws, 'Resultados');
+        XLSX.writeFile(wb, 'Resultados.xlsx');
+    }
+
+    // ── Balance general ────────────────────────────────────────────
+    async function generarBalance() {
+        var fecha = document.getElementById('filter-bg-fecha').value;
+        var cont  = document.getElementById('balance-report');
+        if (!fecha) { cont.innerHTML = '<div class="empty">Selecciona fecha</div>'; return; }
+        cont.innerHTML = '<div class="loading">Cargando…</div>';
+
+        var res = await sb
+            .from('amir_polizas_detalles')
+            .select('cuenta_id, debe, haber, amir_polizas(fecha)')
+            .lte('amir_polizas.fecha', fecha);
+
+        if (res.error) { cont.innerHTML = '<div class="empty">Error: ' + res.error.message + '</div>'; return; }
+
+        var movs = (res.data || []).filter(function(d){ return d.amir_polizas; });
+        var acc  = {};
+
+        movs.forEach(function(d) {
+            subirHierarchy(d.cuenta_id, d.debe||0, d.haber||0, acc);
+        });
+
+        function saldoCta(ctaId) {
+            var s = acc[ctaId] || { debe: 0, haber: 0 };
+            return s.debe - s.haber;
+        }
+
+        // Grupos por tipo nivel 2
+        var activos  = CATALOGO.filter(function(c){ return c.nivel === 2 && /activo/i.test(c.tipo||''); });
+        var pasivos  = CATALOGO.filter(function(c){ return c.nivel === 2 && /pasivo/i.test(c.tipo||''); });
+        var capital  = CATALOGO.filter(function(c){ return c.nivel === 2 && /capital/i.test(c.tipo||''); });
+        var ingresos = CATALOGO.filter(function(c){ return c.nivel === 2 && /ingreso|costo|gasto|rif/i.test(c.tipo||''); });
+
+        var resultado = 0;
+        ingresos.forEach(function(c){ resultado += saldoCta(c.id); });
+        // resultado = ingresos - costos - gastos (saldo neto de cuentas de resultados)
+
+        function renderLado(titulo, grupos) {
+            var total = 0;
+            var html  = '<div class="balance-side"><h3>' + titulo + '</h3>';
+            grupos.forEach(function(g) {
+                var s = saldoCta(g.id);
+                if (Math.abs(s) < 0.01) return;
+                total += s;
+                html += '<div class="balance-item child"><span>' + g.codigo + ' ' + g.nombre + '</span><span class="balance-amount num ' + nc(s) + '">' + fmt(s) + '</span></div>';
+            });
+            html += '<div class="balance-total"><span>TOTAL ' + titulo.toUpperCase() + '</span><span class="balance-amount num ' + nc(total) + '">' + fmt(total) + '</span></div></div>';
+            return { html: html, total: total };
+        }
+
+        var rAct = renderLado('Activo', activos);
+        var rPas = renderLado('Pasivo', pasivos);
+
+        var totCap = 0;
+        var htmlCap = '<div class="balance-side"><h3>Capital Contable</h3>';
+        capital.forEach(function(g) {
+            var s = saldoCta(g.id);
+            if (Math.abs(s) < 0.01) return;
+            totCap += Math.abs(s);
+            htmlCap += '<div class="balance-item child"><span>' + g.codigo + ' ' + g.nombre + '</span><span class="balance-amount num">' + fmt(Math.abs(s)) + '</span></div>';
+        });
+        // Traspaso resultado NIF B-6
+        totCap += -resultado;
+        htmlCap += '<div class="balance-item child" style="background:#e0f2fe;padding:8px;margin:6px 0;border-radius:4px;border-left:3px solid #0284c7">';
+        htmlCap += '<span style="font-weight:600">⭐ Resultado del Ejercicio</span>';
+        htmlCap += '<span class="balance-amount num ' + nc(-resultado) + '">' + fmt(-resultado) + '</span></div>';
+        htmlCap += '<div class="balance-total"><span>TOTAL CAPITAL CONTABLE</span><span class="balance-amount num">' + fmt(totCap) + '</span></div>';
+        htmlCap += '</div>';
+
+        var cuadra = Math.abs(rAct.total - (rPas.total + totCap)) < 1;
+
+        var html  = '<div class="report-header"><h2>🏦 BALANCE GENERAL</h2><p>Al ' + new Date(fecha).toLocaleDateString('es-MX') + ' | NIF B-6</p></div>';
+        html += '<div class="balance-container">' + rAct.html + '<div>';
+        html += rPas.html + htmlCap;
+        html += '<div class="balance-total" style="margin-top:12px"><span>SUMA PASIVO + CAPITAL</span><span class="balance-amount num">' + fmt(rPas.total + totCap) + '</span></div>';
+        html += '</div></div>';
+        html += '<div class="section" style="background:' + (cuadra ? '#f0fdf4' : '#fef2f2') + ';border-left-color:' + (cuadra ? '#22c55e' : '#dc2626') + '">';
+        html += '<div style="font-weight:600;font-size:12px;color:' + (cuadra ? '#166534' : '#991b1b') + '">' + (cuadra ? '✓ BALANCE CUADRADO' : '❌ BALANCE NO CUADRA') + '</div></div>';
+
+        cont.innerHTML = html;
+    }
+
+    function exportarBalance() {
+        var wb = XLSX.utils.book_new();
+        var ws = XLSX.utils.aoa_to_sheet([['Balance General']]);
+        XLSX.utils.book_append_sheet(wb, ws, 'Balance');
+        XLSX.writeFile(wb, 'Balance.xlsx');
+    }
+
+    // ── Navegación ─────────────────────────────────────────────────
+    function setView(v) {
+        document.querySelectorAll('.view').forEach(function(el){ el.classList.remove('active'); });
+        document.getElementById('view-' + v).classList.add('active');
+        document.querySelectorAll('.nav-btn').forEach(function(el){ el.classList.remove('active'); });
+        event.target.classList.add('active');
+        if      (v === 'auxiliar')   generarAuxiliar();
+        else if (v === 'balanza')    generarBalanza();
+        else if (v === 'resultados') generarResultados();
+        else if (v === 'balance')    generarBalance();
+        else if (v === 'polizas')    cargarListaPolizas();
+    }
+
+    // ── Exponer al DOM ─────────────────────────────────────────────
+    window.setView          = setView;
+    window.agregarLinea     = agregarLinea;
+    window.quitarLinea      = quitarLinea;
+    window.limpiarHaber     = limpiarHaber;
+    window.limpiarDebe      = limpiarDebe;
+    window.recalcular       = recalcular;
+    window.actualizarFolio  = actualizarFolio;
+    window.guardarPoliza    = guardarPoliza;
+    window.cargarListaPolizas = cargarListaPolizas;
+    window.verDetalle       = verDetalle;
+    window.generarAuxiliar  = generarAuxiliar;
+    window.exportarAuxiliar = exportarAuxiliar;
+    window.generarBalanza   = generarBalanza;
+    window.exportarBalanza  = exportarBalanza;
+    window.generarResultados = generarResultados;
+    window.exportarResultados = exportarResultados;
+    window.generarBalance   = generarBalance;
+    window.exportarBalance  = exportarBalance;
+
+    document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
 </body>
 </html>
