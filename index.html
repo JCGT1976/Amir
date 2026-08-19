@@ -256,12 +256,87 @@
         </header>
         
         <div class="nav-container">
+            <button class="nav-btn" onclick="setView('polizas')">📝 Pólizas</button>
             <button class="nav-btn active" onclick="setView('auxiliar')">📋 Auxiliar</button>
             <button class="nav-btn" onclick="setView('balanza')">⚖️ Balanza</button>
             <button class="nav-btn" onclick="setView('resultados')">📈 Estado Resultados</button>
             <button class="nav-btn" onclick="setView('balance')">🏦 Balance General</button>
         </div>
         
+        <!-- PÓLIZAS CONTABLES -->
+        <div id="view-polizas" class="view">
+            <div class="report-header">
+                <h2>📝 CAPTURA DE PÓLIZAS</h2>
+                <p>Solo cuentas Nivel 4 y 5 · Partida doble estricta · NIF</p>
+            </div>
+
+            <!-- Encabezado de la póliza -->
+            <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px;margin-bottom:12px">
+                <div style="display:grid;grid-template-columns:120px 160px 1fr auto;gap:12px;align-items:end">
+                    <div>
+                        <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">TIPO</label>
+                        <select id="pol-tipo" style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px">
+                            <option value="ING">ING – Ingreso</option>
+                            <option value="EGR">EGR – Egreso</option>
+                            <option value="DIA">DIA – Diario</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">FECHA</label>
+                        <input type="date" id="pol-fecha" style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px">
+                    </div>
+                    <div>
+                        <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">CONCEPTO</label>
+                        <input type="text" id="pol-concepto" placeholder="Descripción de la póliza…" style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px">
+                    </div>
+                    <div>
+                        <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">FOLIO</label>
+                        <input type="text" id="pol-folio" readonly style="width:72px;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px;background:var(--gris-tenue);color:var(--gris-etiqueta)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Líneas de la póliza -->
+            <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px;margin-bottom:12px">
+                <div style="font-size:11px;font-weight:700;color:var(--azul-marino);margin-bottom:10px;text-transform:uppercase">Partidas</div>
+                <div id="pol-lineas">
+                    <!-- líneas dinámicas -->
+                </div>
+                <button onclick="agregarLineaPoliza()" style="margin-top:8px;padding:6px 12px;background:var(--azul-claro);color:var(--azul-marino);border:1px dashed var(--azul-ejecutivo);border-radius:4px;cursor:pointer;font-size:11px;font-weight:600">+ Agregar línea</button>
+            </div>
+
+            <!-- Totales y validación -->
+            <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+                <div style="display:flex;gap:40px">
+                    <div>
+                        <div style="font-size:10px;color:var(--gris-etiqueta);font-weight:600">TOTAL DEBE</div>
+                        <div id="pol-total-debe" style="font-family:'Courier New',monospace;font-size:16px;font-weight:700;color:var(--azul-ejecutivo)">$0</div>
+                    </div>
+                    <div>
+                        <div style="font-size:10px;color:var(--gris-etiqueta);font-weight:600">TOTAL HABER</div>
+                        <div id="pol-total-haber" style="font-family:'Courier New',monospace;font-size:16px;font-weight:700;color:var(--azul-ejecutivo)">$0</div>
+                    </div>
+                    <div>
+                        <div style="font-size:10px;color:var(--gris-etiqueta);font-weight:600">DIFERENCIA</div>
+                        <div id="pol-diferencia" style="font-family:'Courier New',monospace;font-size:16px;font-weight:700;color:var(--rojo-negativo)">$0</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:10px">
+                    <div id="pol-status" style="font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:var(--gris-tenue);color:var(--gris-etiqueta)">Captura en progreso</div>
+                    <button onclick="guardarPoliza()" id="btn-guardar-poliza" disabled style="padding:10px 20px;background:#94a3b8;color:#fff;border:none;border-radius:6px;cursor:not-allowed;font-size:13px;font-weight:700">💾 Guardar</button>
+                </div>
+            </div>
+
+            <!-- Lista de pólizas registradas -->
+            <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <div style="font-size:11px;font-weight:700;color:var(--azul-marino);text-transform:uppercase">Pólizas Registradas</div>
+                    <input type="month" id="pol-filtro-mes" onchange="renderListaPolizas()" style="padding:5px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
+                </div>
+                <div id="pol-lista"></div>
+            </div>
+        </div>
+
         <!-- AUXILIAR DEL LIBRO MAYOR -->
         <div id="view-auxiliar" class="view active">
             <div class="filters">
@@ -308,11 +383,11 @@
     </div>
     
     <footer>
-        <p>SIF-Amir v2026.08.15.2 | NIF B-3, B-6, D-1, D-2 | Sistema Perpetuo Inventarios</p>
+        <p>SIF-Amir v2026.08.19.1 | NIF B-3, B-6, D-1, D-2 | Sistema Perpetuo Inventarios | Pólizas Nivel 4/5</p>
     </footer>
 
     <script>
-        const APP_VERSION = '2026.08.15.2';
+        const APP_VERSION = '2026.08.19.1';
         
         // ===== CATÁLOGO DE CUENTAS (NIF Anexo 24) =====
         const CATALOGO = [
@@ -960,6 +1035,260 @@
             XLSX.writeFile(wb, 'Balance.xlsx');
         }
         
+        // ===== MÓDULO DE PÓLIZAS =====
+
+        // Cuentas que aceptan movimientos (Nivel 4 y 5)
+        const CUENTAS_MOVIMIENTO = CATALOGO.filter(c => c.acepta_mov);
+
+        // Contador de folios por tipo
+        const FOLIOS = { ING: 0, EGR: 0, DIA: 0 };
+        (function() {
+            POLIZAS.forEach(p => {
+                const t = (p.tipo || '').toUpperCase();
+                const f = parseInt(p.folio) || 0;
+                if (FOLIOS[t] !== undefined && f > FOLIOS[t]) FOLIOS[t] = f;
+            });
+        })();
+
+        // Inicializar formulario de póliza
+        function initPolizaForm() {
+            // Fecha de hoy por defecto
+            document.getElementById('pol-fecha').value = new Date().toISOString().split('T')[0];
+            // Mes actual en filtro lista
+            document.getElementById('pol-filtro-mes').value = new Date().toISOString().slice(0,7);
+            actualizarFolio();
+            // 2 líneas iniciales
+            document.getElementById('pol-lineas').innerHTML = '';
+            agregarLineaPoliza();
+            agregarLineaPoliza();
+            renderListaPolizas();
+        }
+
+        function actualizarFolio() {
+            const tipo = document.getElementById('pol-tipo').value;
+            const siguiente = (FOLIOS[tipo] || 0) + 1;
+            document.getElementById('pol-folio').value = String(siguiente).padStart(4, '0');
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const selTipo = document.getElementById('pol-tipo');
+            if (selTipo) selTipo.addEventListener('change', actualizarFolio);
+        });
+
+        function buildSelectCuenta(idSel, valorActual) {
+            let html = `<select id="${idSel}" onchange="recalcularTotales()" style="width:100%;padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
+                <option value="">-- Seleccionar cuenta --</option>`;
+            CUENTAS_MOVIMIENTO.forEach(c => {
+                const lv = c.nivel === 5 ? '&nbsp;&nbsp;&nbsp;&nbsp;' : '';
+                const sel = (valorActual && valorActual == c.id) ? 'selected' : '';
+                html += `<option value="${c.id}" ${sel}>${lv}${c.codigo} ${c.nombre}</option>`;
+            });
+            html += `</select>`;
+            return html;
+        }
+
+        let lineaIdx = 0;
+        function agregarLineaPoliza(cuentaId, debe, haber, concepto) {
+            const idx = ++lineaIdx;
+            const div = document.createElement('div');
+            div.id = `pol-linea-${idx}`;
+            div.style.cssText = 'display:grid;grid-template-columns:1fr 110px 110px 1fr 32px;gap:8px;align-items:center;margin-bottom:6px;padding:6px;background:var(--gris-tenue);border-radius:4px';
+            div.innerHTML = `
+                ${buildSelectCuenta(`pol-cta-${idx}`, cuentaId)}
+                <input type="number" id="pol-debe-${idx}" placeholder="Debe" min="0" step="0.01"
+                    value="${debe || ''}"
+                    oninput="limpiarHaber(${idx});recalcularTotales()"
+                    style="padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px;text-align:right;font-family:'Courier New',monospace">
+                <input type="number" id="pol-haber-${idx}" placeholder="Haber" min="0" step="0.01"
+                    value="${haber || ''}"
+                    oninput="limpiarDebe(${idx});recalcularTotales()"
+                    style="padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px;text-align:right;font-family:'Courier New',monospace">
+                <input type="text" id="pol-desc-${idx}" placeholder="Concepto línea (opcional)"
+                    value="${concepto || ''}"
+                    style="padding:6px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
+                <button onclick="eliminarLinea(${idx})" title="Eliminar" style="width:28px;height:28px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;cursor:pointer;font-size:14px;font-weight:700">×</button>
+            `;
+            document.getElementById('pol-lineas').appendChild(div);
+            recalcularTotales();
+        }
+
+        function limpiarHaber(idx) {
+            const h = document.getElementById(`pol-haber-${idx}`);
+            const d = document.getElementById(`pol-debe-${idx}`);
+            if (d && d.value) { if (h) h.value = ''; }
+        }
+        function limpiarDebe(idx) {
+            const d = document.getElementById(`pol-debe-${idx}`);
+            const h = document.getElementById(`pol-haber-${idx}`);
+            if (h && h.value) { if (d) d.value = ''; }
+        }
+
+        function eliminarLinea(idx) {
+            const el = document.getElementById(`pol-linea-${idx}`);
+            if (el) el.remove();
+            recalcularTotales();
+        }
+
+        function getLineasActuales() {
+            const lineas = [];
+            document.querySelectorAll('[id^="pol-linea-"]').forEach(div => {
+                const idx = div.id.replace('pol-linea-', '');
+                const ctaId = parseInt(document.getElementById(`pol-cta-${idx}`)?.value);
+                const debe  = parseFloat(document.getElementById(`pol-debe-${idx}`)?.value) || 0;
+                const haber = parseFloat(document.getElementById(`pol-haber-${idx}`)?.value) || 0;
+                const desc  = document.getElementById(`pol-desc-${idx}`)?.value || '';
+                if (ctaId && (debe > 0 || haber > 0)) {
+                    lineas.push({ cuenta_id: ctaId, debe, haber, desc });
+                }
+            });
+            return lineas;
+        }
+
+        function recalcularTotales() {
+            const lineas = getLineasActuales();
+            const totalDebe  = lineas.reduce((s, l) => s + l.debe, 0);
+            const totalHaber = lineas.reduce((s, l) => s + l.haber, 0);
+            const diff = Math.round((totalDebe - totalHaber) * 100) / 100;
+
+            document.getElementById('pol-total-debe').textContent  = `$${totalDebe.toLocaleString('es-MX', {minimumFractionDigits:2})}`;
+            document.getElementById('pol-total-haber').textContent = `$${totalHaber.toLocaleString('es-MX', {minimumFractionDigits:2})}`;
+            document.getElementById('pol-diferencia').textContent  = `$${Math.abs(diff).toLocaleString('es-MX', {minimumFractionDigits:2})}`;
+
+            const btn    = document.getElementById('btn-guardar-poliza');
+            const status = document.getElementById('pol-status');
+            const cuadra = diff === 0 && lineas.length >= 2;
+
+            if (cuadra) {
+                btn.disabled = false;
+                btn.style.cssText = 'padding:10px 20px;background:var(--azul-ejecutivo);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700';
+                status.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:#dcfce7;color:#166534';
+                status.textContent = '✓ Póliza cuadrada';
+                document.getElementById('pol-diferencia').style.color = '#16a34a';
+            } else {
+                btn.disabled = true;
+                btn.style.cssText = 'padding:10px 20px;background:#94a3b8;color:#fff;border:none;border-radius:6px;cursor:not-allowed;font-size:13px;font-weight:700';
+                status.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:#fef2f2;color:#991b1b';
+                status.textContent = diff !== 0 ? `❌ Descuadre: $${Math.abs(diff).toLocaleString('es-MX', {minimumFractionDigits:2})}` : 'Mínimo 2 líneas';
+                document.getElementById('pol-diferencia').style.color = 'var(--rojo-negativo)';
+            }
+        }
+
+        function guardarPoliza() {
+            const tipo    = document.getElementById('pol-tipo').value;
+            const fecha   = document.getElementById('pol-fecha').value;
+            const concepto = document.getElementById('pol-concepto').value.trim();
+            const lineas  = getLineasActuales();
+
+            if (!fecha)    { alert('Falta la fecha'); return; }
+            if (!concepto) { alert('Falta el concepto'); return; }
+
+            const totalDebe  = lineas.reduce((s, l) => s + l.debe, 0);
+            const totalHaber = lineas.reduce((s, l) => s + l.haber, 0);
+            if (Math.round((totalDebe - totalHaber) * 100) !== 0) {
+                alert('La póliza no cuadra. Verifica debe = haber.'); return;
+            }
+
+            // Incrementar folio
+            FOLIOS[tipo] = (FOLIOS[tipo] || 0) + 1;
+            const folio = FOLIOS[tipo];
+
+            // Crear póliza en memoria
+            const polizaId = POLIZAS.length + 1;
+            const nuevaPoliza = { id: polizaId, tipo: tipo.toLowerCase(), folio, fecha, concepto, detalles: [] };
+
+            // Crear detalles y push a POLIZAS_DETALLES
+            lineas.forEach(l => {
+                const cta = CATALOGO.find(c => c.id === l.cuenta_id);
+                // Nivel 4/5 validado en frontend; el trigger lo valida en Supabase
+                nuevaPoliza.detalles.push({
+                    cuenta_id: l.cuenta_id,
+                    tipo_mov: l.debe > 0 ? 'cargo' : 'abono',
+                    monto: l.debe > 0 ? l.debe : l.haber
+                });
+                POLIZAS_DETALLES.push({
+                    id: POLIZAS_DETALLES.length + 1,
+                    poliza_id: polizaId,
+                    cuenta_id: l.cuenta_id,
+                    tipo_movimiento: l.debe > 0 ? 'cargo' : 'abono',
+                    monto: l.debe > 0 ? l.debe : l.haber
+                });
+            });
+
+            POLIZAS.push(nuevaPoliza);
+
+            // Resetear formulario
+            document.getElementById('pol-concepto').value = '';
+            document.getElementById('pol-lineas').innerHTML = '';
+            lineaIdx = 0;
+            actualizarFolio();
+            agregarLineaPoliza();
+            agregarLineaPoliza();
+            recalcularTotales();
+            renderListaPolizas();
+
+            // Feedback
+            const status = document.getElementById('pol-status');
+            status.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:#dcfce7;color:#166534';
+            status.textContent = `✓ Póliza ${tipo}-${String(folio).padStart(4,'0')} guardada`;
+            setTimeout(() => {
+                status.style.cssText = 'font-size:12px;font-weight:600;padding:8px 12px;border-radius:6px;background:var(--gris-tenue);color:var(--gris-etiqueta)';
+                status.textContent = 'Captura en progreso';
+            }, 2500);
+        }
+
+        function renderListaPolizas() {
+            const mes = document.getElementById('pol-filtro-mes')?.value || '';
+            const cont = document.getElementById('pol-lista');
+            const filtradas = mes
+                ? POLIZAS.filter(p => p.fecha && p.fecha.slice(0,7) === mes)
+                : POLIZAS;
+
+            if (!filtradas.length) {
+                cont.innerHTML = '<div class="empty">Sin pólizas en el período</div>';
+                return;
+            }
+
+            let html = `<table>
+                <thead><tr>
+                    <th>Fecha</th><th>Tipo</th><th>Folio</th><th>Concepto</th>
+                    <th class="num">Debe</th><th class="num">Haber</th><th>Detalle</th>
+                </tr></thead><tbody>`;
+
+            filtradas.forEach(p => {
+                const lineas = p.detalles || [];
+                const totalDebe  = lineas.filter(d => d.tipo_mov === 'cargo' ).reduce((s,d) => s+d.monto, 0);
+                const totalHaber = lineas.filter(d => d.tipo_mov === 'abono' ).reduce((s,d) => s+d.monto, 0);
+                const folio = String(p.folio).padStart(4,'0');
+                html += `<tr>
+                    <td>${p.fecha}</td>
+                    <td><span style="font-weight:600;color:var(--azul-ejecutivo)">${(p.tipo||'').toUpperCase()}</span></td>
+                    <td>${folio}</td>
+                    <td>${p.concepto}</td>
+                    <td class="num">${totalDebe ? totalDebe.toLocaleString('es-MX',{minimumFractionDigits:2}) : '-'}</td>
+                    <td class="num">${totalHaber ? totalHaber.toLocaleString('es-MX',{minimumFractionDigits:2}) : '-'}</td>
+                    <td><button onclick="verDetallePoliza(${p.id})" style="padding:3px 8px;background:var(--azul-claro);color:var(--azul-marino);border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600">Ver</button></td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            cont.innerHTML = html;
+        }
+
+        function verDetallePoliza(polizaId) {
+            const p = POLIZAS.find(x => x.id === polizaId);
+            if (!p) return;
+            let txt = `PÓLIZA ${(p.tipo||'').toUpperCase()}-${String(p.folio).padStart(4,'0')} | ${p.fecha}\n${p.concepto}\n\n`;
+            txt += `${'CUENTA'.padEnd(40)} ${'DEBE'.padStart(14)} ${'HABER'.padStart(14)}\n`;
+            txt += '─'.repeat(70) + '\n';
+            (p.detalles||[]).forEach(d => {
+                const cta = CATALOGO.find(c => c.id === d.cuenta_id);
+                const nombre = cta ? `${cta.codigo} ${cta.nombre}`.substring(0,38) : `Cta ${d.cuenta_id}`;
+                const debe  = d.tipo_mov === 'cargo'  ? d.monto.toLocaleString('es-MX',{minimumFractionDigits:2}) : '';
+                const haber = d.tipo_mov === 'abono'  ? d.monto.toLocaleString('es-MX',{minimumFractionDigits:2}) : '';
+                txt += `${nombre.padEnd(40)} ${debe.padStart(14)} ${haber.padStart(14)}\n`;
+            });
+            alert(txt);
+        }
+
         // ===== NAVEGACIÓN =====
         function setView(v) {
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
@@ -967,7 +1296,8 @@
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
             
-            if(v === 'auxiliar') generarAuxiliar();
+            if(v === 'polizas') { renderListaPolizas(); actualizarFolio(); }
+            else if(v === 'auxiliar') generarAuxiliar();
             else if(v === 'balanza') generarBalanza();
             else if(v === 'resultados') generarResultados();
             else if(v === 'balance') generarBalance();
@@ -975,10 +1305,19 @@
         
         // ===== INICIALIZACIÓN =====
         window.addEventListener('DOMContentLoaded', () => {
+            initPolizaForm();
             llenarSelectAuxiliar();
             generarAuxiliar();
         });
         
+        window.agregarLineaPoliza = agregarLineaPoliza;
+        window.eliminarLinea = eliminarLinea;
+        window.limpiarHaber = limpiarHaber;
+        window.limpiarDebe = limpiarDebe;
+        window.recalcularTotales = recalcularTotales;
+        window.guardarPoliza = guardarPoliza;
+        window.renderListaPolizas = renderListaPolizas;
+        window.verDetallePoliza = verDetallePoliza;
         window.generarAuxiliar = generarAuxiliar;
         window.exportarAuxiliar = exportarAuxiliar;
         window.generarBalanza = generarBalanza;
