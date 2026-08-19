@@ -79,6 +79,7 @@
 
     <div class="nav-container">
         <button class="nav-btn active" onclick="setView('polizas')">📝 Pólizas</button>
+        <button class="nav-btn" onclick="setView('cfdi')">📦 Importar CFDI</button>
         <button class="nav-btn" onclick="setView('auxiliar')">📋 Auxiliar</button>
         <button class="nav-btn" onclick="setView('balanza')">⚖️ Balanza</button>
         <button class="nav-btn" onclick="setView('resultados')">📈 Resultados</button>
@@ -158,6 +159,65 @@
         </div>
     </div>
 
+    <!-- IMPORTAR CFDI -->
+    <div id="view-cfdi" class="view">
+        <div class="report-header">
+            <h2>📦 IMPORTAR LOTE CFDI</h2>
+            <p>Excel del Visor SAT · Upsert por UUID · PF Arrendamiento · IVA 16%</p>
+        </div>
+
+        <!-- Controles de carga -->
+        <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px;margin-bottom:12px">
+            <div style="display:grid;grid-template-columns:160px 1fr auto auto;gap:12px;align-items:end">
+                <div>
+                    <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">PERÍODO</label>
+                    <input type="month" id="cfdi-periodo" style="width:100%;padding:7px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:12px">
+                </div>
+                <div>
+                    <label style="font-size:11px;font-weight:600;color:var(--gris-medio);display:block;margin-bottom:4px">EXCEL SAT (XML Recibidos)</label>
+                    <input type="file" id="cfdi-file" accept=".xlsx,.xls" style="width:100%;padding:6px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
+                </div>
+                <div>
+                    <button onclick="procesarExcelCFDI()" style="padding:8px 18px;background:var(--azul-ejecutivo);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap">⚡ Procesar</button>
+                </div>
+                <div>
+                    <button onclick="generarPolizasFaltantes()" id="btn-generar-polizas" style="padding:8px 18px;background:#16a34a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap">🔄 Generar Pólizas</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resultado del procesamiento -->
+        <div id="cfdi-resultado" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:12px">
+            <div style="display:flex;gap:30px;align-items:center">
+                <div><span style="font-size:10px;font-weight:600;color:#15803d;display:block">TOTAL LOTE</span><span id="cfdi-r-total" style="font-size:20px;font-weight:700;color:#15803d">0</span></div>
+                <div><span style="font-size:10px;font-weight:600;color:var(--azul-ejecutivo);display:block">NUEVOS</span><span id="cfdi-r-nuevos" style="font-size:20px;font-weight:700;color:var(--azul-ejecutivo)">0</span></div>
+                <div><span style="font-size:10px;font-weight:600;color:#d97706;display:block">ACTUALIZADOS</span><span id="cfdi-r-act" style="font-size:20px;font-weight:700;color:#d97706">0</span></div>
+                <div><span style="font-size:10px;font-weight:600;color:var(--rojo-negativo);display:block">ERRORES</span><span id="cfdi-r-err" style="font-size:20px;font-weight:700;color:var(--rojo-negativo)">0</span></div>
+                <div style="margin-left:auto"><span id="cfdi-r-json" style="font-size:10px;font-family:Courier New,monospace;color:var(--gris-medio)"></span></div>
+            </div>
+        </div>
+
+        <!-- Lote del período -->
+        <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div style="font-size:11px;font-weight:700;color:var(--azul-marino);text-transform:uppercase">Lote del Período</div>
+                <div style="display:flex;gap:8px">
+                    <select id="cfdi-filtro-tipo" onchange="cargarLoteCFDI()" style="padding:5px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
+                        <option value="">Todos</option>
+                        <option value="I">Ingreso</option>
+                        <option value="E">Egreso</option>
+                    </select>
+                    <select id="cfdi-filtro-estado" onchange="cargarLoteCFDI()" style="padding:5px 8px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
+                        <option value="">Todos</option>
+                        <option value="Vigente">Vigente</option>
+                        <option value="Cancelado">Cancelado</option>
+                    </select>
+                </div>
+            </div>
+            <div id="cfdi-tabla"><div class="loading">Selecciona período y carga el Excel SAT</div></div>
+        </div>
+    </div>
+
     <!-- AUXILIAR -->
     <div id="view-auxiliar" class="view">
         <div class="filters">
@@ -202,14 +262,14 @@
 </div>
 
 <footer>
-    <p>SIF-Amir v2026.08.19.2 | NIF B-3, B-6, D-1, D-2 | Catálogo Supabase · amir_catalogo_cuentas</p>
+    <p>SIF-Amir v2026.08.19.3 | NIF B-3, B-6, D-1, D-2 | CFDI Upsert · PF Arrendamiento · IVA 16%</p>
 </footer>
 
 <script>
 (function () {
     'use strict';
 
-    const APP_VERSION = '2026.08.19.2';
+    const APP_VERSION = '2026.08.19.3';
     const SB_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
     const SB_KEY  = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
     var sb = window.supabase.createClient(SB_URL, SB_KEY);
@@ -815,14 +875,328 @@
         document.getElementById('view-' + v).classList.add('active');
         document.querySelectorAll('.nav-btn').forEach(function(el){ el.classList.remove('active'); });
         event.target.classList.add('active');
-        if      (v === 'auxiliar')   generarAuxiliar();
+        if      (v === 'cfdi')       { document.getElementById('cfdi-periodo').value = mesActual(); cargarLoteCFDI(); }
+        else if (v === 'auxiliar')   generarAuxiliar();
         else if (v === 'balanza')    generarBalanza();
         else if (v === 'resultados') generarResultados();
         else if (v === 'balance')    generarBalance();
         else if (v === 'polizas')    cargarListaPolizas();
     }
 
+    // ── Módulo CFDI ────────────────────────────────────────────────
+
+    // Columnas del Excel SAT → campos internos
+    var COL = {
+        fecha:    '▼ Fecha Comprobante',
+        rfcEmisor:'RFC Emisor',
+        nombre:   'Nombre Emisor',
+        moneda:   'Moneda',
+        tipoCambio:'Tipo Cambio',
+        total:    'Total',
+        estatus:  'Estatus',
+        uuid:     'UUID',
+        tipoDesc: 'Tipo Comprobante Desc'  // 'Ingreso' | 'Egreso'
+    };
+
+    // IVA PF Arrendamiento
+    function calcularImpuestos(total, tipo) {
+        var t   = parseFloat(total) || 0;
+        var sub = Math.round((t / 1.16) * 100) / 100;
+        var iva = Math.round((t - sub) * 100) / 100;
+        return { subtotal: sub, iva: iva };
+    }
+
+    function parseFecha(val) {
+        if (!val) return null;
+        // DD/MM/YYYY o Date de xlsx
+        if (typeof val === 'string') {
+            var p = val.trim().split('/');
+            if (p.length === 3) return p[2] + '-' + p[1].padStart(2,'0') + '-' + p[0].padStart(2,'0');
+            return val.slice(0,10);
+        }
+        if (val instanceof Date) return val.toISOString().split('T')[0];
+        return String(val).slice(0,10);
+    }
+
+    function tipoLetra(desc) {
+        // 'Ingreso' → 'I', 'Egreso' → 'E'
+        return (desc || '').charAt(0).toUpperCase() || 'I';
+    }
+
+    async function procesarExcelCFDI() {
+        var periodo = document.getElementById('cfdi-periodo').value;
+        var file    = document.getElementById('cfdi-file').files[0];
+
+        if (!periodo) { alert('Selecciona el período'); return; }
+        if (!file)    { alert('Carga el Excel SAT'); return; }
+
+        var res = document.getElementById('cfdi-resultado');
+        res.style.display = 'none';
+        document.getElementById('cfdi-tabla').innerHTML = '<div class="loading">Procesando…</div>';
+
+        // Leer Excel con SheetJS
+        var data = await file.arrayBuffer();
+        var wb   = XLSX.read(data, { type: 'array', cellDates: true });
+        var ws   = wb.Sheets[wb.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(ws, { defval: null });
+
+        // Filtrar filas con UUID válido
+        var validas = rows.filter(function(r){ return r[COL.uuid] && String(r[COL.uuid]).length > 10; });
+
+        var nuevos = 0, actualizados = 0, errores = [];
+
+        for (var i = 0; i < validas.length; i++) {
+            var r    = validas[i];
+            var uuid = String(r[COL.uuid]).trim().toLowerCase();
+            var tipo = tipoLetra(r[COL.tipoDesc]);
+            var fecha = parseFecha(r[COL.fecha]);
+            var total = parseFloat(r[COL.total]) || 0;
+            var imp   = calcularImpuestos(total, tipo);
+            var estado = (r[COL.estatus] || 'Vigente');
+
+            var registro = {
+                uuid:         uuid,
+                periodo:      periodo,
+                tipo_cfdi:    tipo,
+                fecha:        fecha,
+                rfc_emisor:   (r[COL.rfcEmisor] || '').trim(),
+                nombre_emisor:(r[COL.nombre]    || '').trim(),
+                subtotal:     imp.subtotal,
+                iva:          imp.iva,
+                total:        total,
+                estado:       estado
+            };
+
+            // Upsert por UUID
+            var upsertRes = await sb
+                .from('amir_cfdi_lote')
+                .upsert(registro, { onConflict: 'uuid' })
+                .select();
+
+            if (upsertRes.error) {
+                errores.push({ uuid: uuid, error: upsertRes.error.message });
+                continue;
+            }
+
+            // Determinar si fue insert o update
+            // Si la poliza_id ya existía, es actualización
+            var existia = await sb
+                .from('amir_cfdi_lote')
+                .select('id, poliza_id')
+                .eq('uuid', uuid)
+                .single();
+
+            if (!existia.error && existia.data) {
+                if (existia.data.poliza_id) actualizados++;
+                else nuevos++;
+            } else {
+                nuevos++;
+            }
+        }
+
+        // Mostrar resultado JSON
+        var resJSON = {
+            status: errores.length === 0 ? 'success' : 'partial',
+            periodo: periodo,
+            total_lote: validas.length,
+            nuevos_insertados: nuevos,
+            previos_actualizados: actualizados,
+            errores: errores
+        };
+
+        document.getElementById('cfdi-r-total').textContent = validas.length;
+        document.getElementById('cfdi-r-nuevos').textContent = nuevos;
+        document.getElementById('cfdi-r-act').textContent = actualizados;
+        document.getElementById('cfdi-r-err').textContent = errores.length;
+        document.getElementById('cfdi-r-json').textContent = JSON.stringify(resJSON, null, 2);
+        res.style.display = 'block';
+
+        cargarLoteCFDI();
+    }
+
+    async function cargarLoteCFDI() {
+        var periodo = document.getElementById('cfdi-periodo').value;
+        var tipo    = document.getElementById('cfdi-filtro-tipo').value;
+        var estado  = document.getElementById('cfdi-filtro-estado').value;
+        var cont    = document.getElementById('cfdi-tabla');
+
+        if (!periodo) { cont.innerHTML = '<div class="empty">Selecciona período</div>'; return; }
+        cont.innerHTML = '<div class="loading">Cargando…</div>';
+
+        var q = sb.from('amir_cfdi_lote')
+            .select('*')
+            .eq('periodo', periodo)
+            .order('fecha')
+            .order('tipo_cfdi');
+
+        if (tipo)   q = q.eq('tipo_cfdi', tipo);
+        if (estado) q = q.eq('estado', estado);
+
+        var res = await q;
+        if (res.error) { cont.innerHTML = '<div class="empty">Error: ' + res.error.message + '</div>'; return; }
+        if (!res.data || !res.data.length) { cont.innerHTML = '<div class="empty">Sin CFDIs en el período</div>'; return; }
+
+        var totSub = 0, totIVA = 0, totTotal = 0;
+        var html = '<table><thead><tr>' +
+            '<th>Fecha</th><th>Tipo</th><th>RFC Emisor</th><th>Nombre</th>' +
+            '<th class="num">Subtotal</th><th class="num">IVA 16%</th><th class="num">Total</th>' +
+            '<th>Estado</th><th>Póliza</th><th style="font-size:9px">UUID</th>' +
+            '</tr></thead><tbody>';
+
+        res.data.forEach(function(c) {
+            totSub   += c.subtotal || 0;
+            totIVA   += c.iva      || 0;
+            totTotal += c.total    || 0;
+            var badgeTipo  = c.tipo_cfdi === 'I'
+                ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700">ING</span>'
+                : '<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700">EGR</span>';
+            var badgeEst   = c.estado === 'Vigente'
+                ? '<span style="color:#16a34a;font-weight:600;font-size:10px">● Vigente</span>'
+                : '<span style="color:#dc2626;font-weight:600;font-size:10px">✕ Cancelado</span>';
+            var badgePol   = c.poliza_id
+                ? '<span style="color:var(--azul-ejecutivo);font-weight:600;font-size:10px">✓ ' + c.poliza_id + '</span>'
+                : '<span style="color:var(--gris-etiqueta);font-size:10px">Pendiente</span>';
+            html += '<tr>';
+            html += '<td>' + (c.fecha||'') + '</td>';
+            html += '<td>' + badgeTipo + '</td>';
+            html += '<td style="font-size:10px">' + (c.rfc_emisor||'') + '</td>';
+            html += '<td style="font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (c.nombre_emisor||'') + '">' + (c.nombre_emisor||'').substring(0,30) + (c.nombre_emisor && c.nombre_emisor.length > 30 ? '…' : '') + '</td>';
+            html += '<td class="num">' + fmt(c.subtotal) + '</td>';
+            html += '<td class="num">' + fmt(c.iva)      + '</td>';
+            html += '<td class="num" style="font-weight:600">' + fmt(c.total) + '</td>';
+            html += '<td>' + badgeEst + '</td>';
+            html += '<td>' + badgePol + '</td>';
+            html += '<td style="font-size:9px;color:var(--gris-etiqueta);font-family:Courier New,monospace">' + (c.uuid||'').substring(0,8) + '…</td>';
+            html += '</tr>';
+        });
+
+        html += '<tr class="total-row">';
+        html += '<td colspan="4">TOTALES</td>';
+        html += '<td class="num">' + fmt(totSub)   + '</td>';
+        html += '<td class="num">' + fmt(totIVA)   + '</td>';
+        html += '<td class="num">' + fmt(totTotal) + '</td>';
+        html += '<td colspan="3"></td></tr>';
+        html += '</tbody></table>';
+        cont.innerHTML = html;
+    }
+
+    async function generarPolizasFaltantes() {
+        var periodo = document.getElementById('cfdi-periodo').value;
+        if (!periodo) { alert('Selecciona el período'); return; }
+
+        // Obtener CFDIs vigentes sin póliza
+        var res = await sb
+            .from('amir_cfdi_lote')
+            .select('*')
+            .eq('periodo', periodo)
+            .eq('estado', 'Vigente')
+            .is('poliza_id', null);
+
+        if (res.error) { alert('Error: ' + res.error.message); return; }
+        if (!res.data || !res.data.length) { alert('No hay CFDIs pendientes de póliza en el período'); return; }
+
+        var generadas = 0, errores = [];
+
+        for (var i = 0; i < res.data.length; i++) {
+            var c = res.data[i];
+            try {
+                var polizaId = await generarPolizaDesdeCFDI(c);
+                if (polizaId) {
+                    // Actualizar cfdi_lote con poliza_id
+                    await sb.from('amir_cfdi_lote').update({ poliza_id: polizaId }).eq('id', c.id);
+                    generadas++;
+                }
+            } catch(e) {
+                errores.push({ uuid: c.uuid, error: e.message });
+            }
+        }
+
+        alert('Pólizas generadas: ' + generadas + (errores.length ? '\nErrores: ' + errores.length : ''));
+        cargarLoteCFDI();
+    }
+
+    async function generarPolizaDesdeCFDI(cfdi) {
+        // Buscar cuentas por agrupador SAT en catálogo Amir
+        // EGRESOS: 601-Comisiones, 108-IVA Acreditable, 102-01 Banco
+        // INGRESOS: 401-Ingresos, 208-IVA Trasladado, 102-01 Banco
+
+        var tipo      = cfdi.tipo_cfdi; // 'I' | 'E'
+        var subtotal  = cfdi.subtotal;
+        var iva       = cfdi.iva;
+        var total     = cfdi.total;
+        var concepto  = (tipo === 'E' ? 'EGR ' : 'ING ') + (cfdi.rfc_emisor||'') + ' ' + (cfdi.fecha||'');
+
+        // Buscar cuentas en catálogo por agrupador SAT
+        async function ctaPorAgrupador(agrupador) {
+            var r = await sb
+                .from('amir_catalogo_cuentas')
+                .select('id, codigo, nombre')
+                .eq('acepta_movimientos', true)
+                .gte('agrupador_sat', agrupador)
+                .lt('agrupador_sat', agrupador + 1)
+                .order('codigo')
+                .limit(1);
+            return (!r.error && r.data && r.data.length) ? r.data[0] : null;
+        }
+
+        var ctaBanco  = await ctaPorAgrupador(102);  // Bancos
+        var ctaIVAAcr = await ctaPorAgrupador(108);  // IVA Acreditable
+        var ctaIVATrs = await ctaPorAgrupador(208);  // IVA Trasladado
+        var ctaGasto  = await ctaPorAgrupador(601);  // Gastos/Comisiones
+        var ctaIngreso= await ctaPorAgrupador(401);  // Ingresos por arrendamiento
+
+        var lineas = [];
+
+        if (tipo === 'E') {
+            // EGRESO: Gasto + IVA Acreditable / Banco
+            if (!ctaGasto || !ctaBanco) throw new Error('Cuentas de gasto o banco no encontradas en catálogo');
+            lineas = [
+                { cuenta_id: ctaGasto.id,  debe: subtotal, haber: 0 },
+                { cuenta_id: ctaIVAAcr ? ctaIVAAcr.id : ctaGasto.id, debe: iva, haber: 0 },
+                { cuenta_id: ctaBanco.id,  debe: 0, haber: total }
+            ];
+        } else {
+            // INGRESO: Banco / Ingreso + IVA Trasladado
+            if (!ctaIngreso || !ctaBanco) throw new Error('Cuentas de ingreso o banco no encontradas en catálogo');
+            lineas = [
+                { cuenta_id: ctaBanco.id,   debe: total,    haber: 0 },
+                { cuenta_id: ctaIngreso.id, debe: 0,        haber: subtotal },
+                { cuenta_id: ctaIVATrs ? ctaIVATrs.id : ctaIngreso.id, debe: 0, haber: iva }
+            ];
+        }
+
+        // Determinar tipo póliza y folio
+        var tipoPol = tipo === 'E' ? 'EGR' : 'ING';
+        FOLIOS[tipoPol] = (FOLIOS[tipoPol] || 0) + 1;
+
+        // Insertar póliza
+        var rp = await sb.from('amir_polizas').insert({
+            fecha:       cfdi.fecha,
+            tipo_poliza: tipoPol,
+            numero:      String(FOLIOS[tipoPol]),
+            concepto:    concepto
+        }).select().single();
+
+        if (rp.error) throw new Error(rp.error.message);
+
+        // Insertar detalles
+        var detalles = lineas.map(function(l){
+            return { poliza_id: rp.data.id, cuenta_id: l.cuenta_id, debe: l.debe, haber: l.haber };
+        });
+        var rd = await sb.from('amir_polizas_detalles').insert(detalles);
+        if (rd.error) {
+            await sb.from('amir_polizas').delete().eq('id', rp.data.id);
+            FOLIOS[tipoPol]--;
+            throw new Error(rd.error.message);
+        }
+
+        return rp.data.id;
+    }
+
     // ── Exponer al DOM ─────────────────────────────────────────────
+    window.procesarExcelCFDI       = procesarExcelCFDI;
+    window.cargarLoteCFDI          = cargarLoteCFDI;
+    window.generarPolizasFaltantes = generarPolizasFaltantes;
     window.setView          = setView;
     window.agregarLinea     = agregarLinea;
     window.quitarLinea      = quitarLinea;
