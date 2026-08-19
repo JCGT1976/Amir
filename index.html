@@ -152,7 +152,12 @@
 
         <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:8px;padding:16px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                <div style="font-size:11px;font-weight:700;color:var(--azul-marino);text-transform:uppercase">Pólizas Registradas</div>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <div style="font-size:11px;font-weight:700;color:var(--azul-marino);text-transform:uppercase">Pólizas Registradas</div>
+                    <button onclick="toggleSeleccionarTodas()" id="btn-sel-todas" style="padding:4px 10px;background:var(--azul-claro);color:var(--azul-marino);border:1px solid var(--gris-borde);border-radius:4px;cursor:pointer;font-size:10px;font-weight:600">☐ Todas</button>
+                    <button onclick="borrarSeleccionadas()" id="btn-borrar-sel" disabled style="padding:4px 10px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:4px;cursor:not-allowed;font-size:10px;font-weight:600">🗑 Borrar selección</button>
+                    <span id="pol-sel-count" style="font-size:10px;color:var(--gris-etiqueta)"></span>
+                </div>
                 <input type="month" id="pol-filtro-mes" onchange="cargarListaPolizas()" style="padding:5px 10px;border:1px solid var(--gris-borde);border-radius:4px;font-size:11px">
             </div>
             <div id="pol-lista"><div class="loading">Cargando…</div></div>
@@ -269,7 +274,7 @@
 (function () {
     'use strict';
 
-    const APP_VERSION = '2026.08.19.3';
+    const APP_VERSION = '2026.08.19.4';
     const SB_URL  = 'https://nzrzrbatcmzcmrmyrama.supabase.co';
     const SB_KEY  = 'sb_publishable_JMa-_sAXxw3LQrlqR7p7ww_RqLhY89X';
     var sb = window.supabase.createClient(SB_URL, SB_KEY);
@@ -499,6 +504,7 @@
         var mes  = document.getElementById('pol-filtro-mes').value;
         var cont = document.getElementById('pol-lista');
         cont.innerHTML = '<div class="loading">Cargando…</div>';
+        resetSeleccion();
 
         var desde = mes + '-01';
         var hasta = mes + '-31';
@@ -514,23 +520,87 @@
         if (res.error) { cont.innerHTML = '<div class="empty">Error: ' + res.error.message + '</div>'; return; }
         if (!res.data || !res.data.length) { cont.innerHTML = '<div class="empty">Sin pólizas en el período</div>'; return; }
 
-        var html = '<table><thead><tr><th>Fecha</th><th>Tipo</th><th>Folio</th><th>Concepto</th><th class="num">Debe</th><th class="num">Haber</th><th></th></tr></thead><tbody>';
+        var html = '<table><thead><tr>'
+            + '<th style="width:32px"><input type="checkbox" id="chk-todas" onchange="toggleTodasChk(this)" title="Seleccionar todas"></th>'
+            + '<th>Fecha</th><th>Tipo</th><th>Folio</th><th>Concepto</th>'
+            + '<th class="num">Debe</th><th class="num">Haber</th><th></th>'
+            + '</tr></thead><tbody>';
+
         res.data.forEach(function(p) {
             var dets = p.amir_polizas_detalles || [];
             var td = dets.reduce(function(s,d){ return s+(d.debe||0); }, 0);
             var th = dets.reduce(function(s,d){ return s+(d.haber||0); }, 0);
-            html += '<tr>';
+            html += '<tr id="pol-row-' + p.id + '">';
+            html += '<td><input type="checkbox" class="pol-chk" value="' + p.id + '" onchange="actualizarSeleccion()"></td>';
             html += '<td>' + p.fecha + '</td>';
             html += '<td><span style="font-weight:600;color:var(--azul-ejecutivo)">' + p.tipo_poliza + '</span></td>';
             html += '<td>' + String(p.numero).padStart(4,'0') + '</td>';
             html += '<td>' + (p.concepto||'') + '</td>';
             html += '<td class="num">' + fmt(td) + '</td>';
             html += '<td class="num">' + fmt(th) + '</td>';
-            html += '<td><button onclick="verDetalle(' + p.id + ')" style="padding:3px 8px;background:var(--azul-claro);color:var(--azul-marino);border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600">Ver</button></td>';
+            html += '<td style="display:flex;gap:4px">'
+                + '<button onclick="verDetalle(' + p.id + ')" style="padding:3px 8px;background:var(--azul-claro);color:var(--azul-marino);border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600">Ver</button>'
+                + '<button onclick="borrarUna(' + p.id + ')" style="padding:3px 8px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;cursor:pointer;font-size:10px;font-weight:600">🗑</button>'
+                + '</td>';
             html += '</tr>';
         });
         html += '</tbody></table>';
         cont.innerHTML = html;
+    }
+
+    function resetSeleccion() {
+        var btn = document.getElementById('btn-borrar-sel');
+        var cnt = document.getElementById('pol-sel-count');
+        var bts = document.getElementById('btn-sel-todas');
+        if (btn) { btn.disabled = true; btn.style.cursor = 'not-allowed'; }
+        if (cnt) cnt.textContent = '';
+        if (bts) bts.textContent = '☐ Todas';
+    }
+
+    function actualizarSeleccion() {
+        var chks = document.querySelectorAll('.pol-chk:checked');
+        var tot  = document.querySelectorAll('.pol-chk');
+        var btn  = document.getElementById('btn-borrar-sel');
+        var cnt  = document.getElementById('pol-sel-count');
+        var bts  = document.getElementById('btn-sel-todas');
+        var n    = chks.length;
+        if (btn) {
+            btn.disabled = n === 0;
+            btn.style.cursor = n === 0 ? 'not-allowed' : 'pointer';
+        }
+        if (cnt) cnt.textContent = n > 0 ? n + ' seleccionada' + (n > 1 ? 's' : '') : '';
+        if (bts) bts.textContent = (n === tot.length && tot.length > 0) ? '☑ Todas' : '☐ Todas';
+    }
+
+    function toggleTodasChk(chkMaestro) {
+        document.querySelectorAll('.pol-chk').forEach(function(c){ c.checked = chkMaestro.checked; });
+        actualizarSeleccion();
+    }
+
+    function toggleSeleccionarTodas() {
+        var chks = document.querySelectorAll('.pol-chk');
+        var todas = document.querySelectorAll('.pol-chk:checked').length === chks.length;
+        chks.forEach(function(c){ c.checked = !todas; });
+        var cm = document.getElementById('chk-todas');
+        if (cm) cm.checked = !todas;
+        actualizarSeleccion();
+    }
+
+    async function borrarUna(polizaId) {
+        if (!confirm('¿Borrar póliza ' + polizaId + '? Esta acción no se puede deshacer.')) return;
+        var r = await sb.from('amir_polizas').delete().eq('id', polizaId);
+        if (r.error) { alert('Error: ' + r.error.message); return; }
+        cargarListaPolizas();
+    }
+
+    async function borrarSeleccionadas() {
+        var chks = document.querySelectorAll('.pol-chk:checked');
+        if (!chks.length) return;
+        var ids = Array.from(chks).map(function(c){ return parseInt(c.value); });
+        if (!confirm('¿Borrar ' + ids.length + ' póliza' + (ids.length > 1 ? 's' : '') + '? Esta acción no se puede deshacer.')) return;
+        var r = await sb.from('amir_polizas').delete().in('id', ids);
+        if (r.error) { alert('Error: ' + r.error.message); return; }
+        cargarListaPolizas();
     }
 
     async function verDetalle(polizaId) {
@@ -1205,7 +1275,12 @@
     window.recalcular       = recalcular;
     window.actualizarFolio  = actualizarFolio;
     window.guardarPoliza    = guardarPoliza;
-    window.cargarListaPolizas = cargarListaPolizas;
+    window.toggleSeleccionarTodas = toggleSeleccionarTodas;
+    window.toggleTodasChk         = toggleTodasChk;
+    window.actualizarSeleccion    = actualizarSeleccion;
+    window.borrarUna              = borrarUna;
+    window.borrarSeleccionadas    = borrarSeleccionadas;
+    window.cargarListaPolizas     = cargarListaPolizas;
     window.verDetalle       = verDetalle;
     window.generarAuxiliar  = generarAuxiliar;
     window.exportarAuxiliar = exportarAuxiliar;
